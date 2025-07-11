@@ -268,7 +268,7 @@ export function SessionNavBar({
                     </div>
                     
                     <Link
-                      href="/reason"
+                      href="/simulate"
                       className={cn(
                         "flex h-9 w-full items-center gap-3 rounded-lg px-2 text-sm font-medium transition-colors hover:bg-sky-50 hover:text-sky-700",
                         pathname?.includes("reason") && "bg-sky-100 text-sky-700",

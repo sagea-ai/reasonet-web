@@ -29,7 +29,6 @@ export async function getTrialStatus(userId: string): Promise<TrialStatus> {
 
   const now = new Date()
   
-  // Handle users with active trials (regardless of tier)
   if (user.isTrialActive && user.trialEndsAt) {
     const daysRemaining = Math.max(0, Math.ceil((user.trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
     
@@ -86,16 +85,15 @@ export async function expireTrial(userId: string): Promise<void> {
 }
 
 export function canCreateOrganization(tier: string, organizationCount: number, isTrialActive: boolean): boolean {
-  if (isTrialActive) return true; // Unlimited during trial
+  if (isTrialActive) return true; 
   if (tier === 'FREE' || tier === 'PRO') {
     return organizationCount < 1
   }
-  // ENTERPRISE: unlimited
   return true
 }
 
 export function getOrganizationLimit(tier: string, isTrialActive: boolean): number {
-  if (isTrialActive) return -1 // Unlimited during trial
+  if (isTrialActive) return -1 
   if (tier === 'FREE' || tier === 'PRO') return 1
   return -1 // Unlimited for ENTERPRISE
 }
