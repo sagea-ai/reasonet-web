@@ -3,12 +3,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { SessionNavBar } from "@/components/ui/sidebar"
+import { FloatingPromptBar } from "@/components/simulate/FloatingPromptBar"
 import { FaNetworkWired } from "react-icons/fa6";
 import { 
-  IoSend, 
   IoFlashOutline, 
   IoAnalyticsOutline, 
   IoArrowForward,
@@ -22,7 +21,9 @@ import {
   IoGlobeOutline,
   IoPauseOutline,
   IoPlayOutline,
-  IoStopOutline
+  IoStopOutline,
+  IoChevronDownOutline,
+  IoChevronUpOutline
 } from 'react-icons/io5'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
@@ -80,6 +81,7 @@ interface Organization {
 interface ReasoningPageClientProps {
   organizations: Organization[]
   currentOrganization: Organization
+  initialPrompt?: string
 }
 
 interface ThoughtProcess {
@@ -97,12 +99,13 @@ interface StreamingState {
   currentSection: keyof ThoughtProcess | null
 }
 
-export function ReasoningPageClient({ organizations, currentOrganization }: ReasoningPageClientProps) {
-  const [query, setQuery] = useState('')
+export function ReasoningPageClient({ organizations, currentOrganization, initialPrompt }: ReasoningPageClientProps) {
+  const [query, setQuery] = useState(initialPrompt || '')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [result, setResult] = useState<ReasoningResult | null>(null)
   const [selectedOutcome, setSelectedOutcome] = useState<string | null>(null)
   const [showInverseReasoning, setShowInverseReasoning] = useState(false)
+  const [showThinking, setShowThinking] = useState(true)
   const [history, setHistory] = useState<Array<{ query: string; result: ReasoningResult; timestamp: Date }>>([])
   const [streamingState, setStreamingState] = useState<StreamingState>({
     isStreaming: false,
@@ -118,6 +121,13 @@ export function ReasoningPageClient({ organizations, currentOrganization }: Reas
   })
   const [isPaused, setIsPaused] = useState(false)
   const abortControllerRef = useRef<AbortController | null>(null)
+
+  // Auto-analyze if initial prompt is provided
+  useEffect(() => {
+    if (initialPrompt && initialPrompt.trim()) {
+      handleAnalyze()
+    }
+  }, [initialPrompt])
 
   const handleAnalyze = async () => {
     if (!query.trim()) return
@@ -287,7 +297,15 @@ export function ReasoningPageClient({ organizations, currentOrganization }: Reas
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-              Live Reasoning
+              Forward Chain of Thought
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowThinking(!showThinking)}
+                className="ml-2 h-6 w-6 p-0"
+              >
+                {showThinking ? <IoChevronUpOutline className="h-4 w-4" /> : <IoChevronDownOutline className="h-4 w-4" />}
+              </Button>
             </CardTitle>
             <div className="flex items-center gap-2">
               <Button
@@ -312,67 +330,78 @@ export function ReasoningPageClient({ organizations, currentOrganization }: Reas
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {sections.map(({ key, title, icon: Icon, color }) => {
-            const content = streamingState.thoughtProcess[key as keyof ThoughtProcess]
-            const isActive = streamingState.currentSection === key
-            const isCompleted = content && !isActive
-            
-            if (!content && !isActive) return null
+        <AnimatePresence>
+          {showThinking && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <CardContent className="space-y-4">
+                {sections.map(({ key, title, icon: Icon, color }) => {
+                  const content = streamingState.thoughtProcess[key as keyof ThoughtProcess]
+                  const isActive = streamingState.currentSection === key
+                  const isCompleted = content && !isActive
+                  
+                  if (!content && !isActive) return null
 
-            return (
-              <motion.div
-                key={key}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-3"
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${
-                    isActive ? 'bg-blue-50 dark:bg-blue-900/20' : 
-                    isCompleted ? 'bg-green-50 dark:bg-green-900/20' : 
-                    'bg-gray-50 dark:bg-gray-900'
-                  }`}>
-                    <Icon className={`h-4 w-4 ${
-                      isActive ? 'text-blue-600' : 
-                      isCompleted ? 'text-green-600' : 
-                      'text-gray-400'
-                    }`} />
-                  </div>
-                  <div className="flex-1">
-                    <span className={`text-sm font-medium ${
-                      isActive ? 'text-blue-600' : 
-                      isCompleted ? 'text-green-600' : 
-                      'text-gray-600'
-                    }`}>
-                      {title}
-                    </span>
-                    {isActive && (
-                      <div className="flex items-center gap-2 mt-1">
-                        <div className="w-1 h-1 bg-blue-500 rounded-full animate-pulse"></div>
-                        <span className="text-xs text-gray-500">Analyzing...</span>
+                  return (
+                    <motion.div
+                      key={key}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${
+                          isActive ? 'bg-blue-50 dark:bg-blue-900/20' : 
+                          isCompleted ? 'bg-green-50 dark:bg-green-900/20' : 
+                          'bg-gray-50 dark:bg-gray-900'
+                        }`}>
+                          <Icon className={`h-4 w-4 ${
+                            isActive ? 'text-blue-600' : 
+                            isCompleted ? 'text-green-600' : 
+                            'text-gray-400'
+                          }`} />
+                        </div>
+                        <div className="flex-1">
+                          <span className={`text-sm font-medium ${
+                            isActive ? 'text-blue-600' : 
+                            isCompleted ? 'text-green-600' : 
+                            'text-gray-600'
+                          }`}>
+                            {title}
+                          </span>
+                          {isActive && (
+                            <div className="flex items-center gap-2 mt-1">
+                              <div className="w-1 h-1 bg-blue-500 rounded-full animate-pulse"></div>
+                              <span className="text-xs text-gray-500">Analyzing...</span>
+                            </div>
+                          )}
+                          {isCompleted && (
+                            <div className="flex items-center gap-2 mt-1">
+                              <IoCheckmarkCircleOutline className="h-3 w-3 text-green-500" />
+                              <span className="text-xs text-green-600">Complete</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
-                    {isCompleted && (
-                      <div className="flex items-center gap-2 mt-1">
-                        <IoCheckmarkCircleOutline className="h-3 w-3 text-green-500" />
-                        <span className="text-xs text-green-600">Complete</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {content && (
-                  <div className="ml-12 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800">
-                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                      {content}
-                      {isActive && <span className="animate-pulse">|</span>}
-                    </p>
-                  </div>
-                )}
-              </motion.div>
-            )
-          })}
-        </CardContent>
+                      {content && (
+                        <div className="ml-12 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800">
+                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                            {content}
+                            {isActive && <span className="animate-pulse">|</span>}
+                          </p>
+                        </div>
+                      )}
+                    </motion.div>
+                  )
+                })}
+              </CardContent>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </Card>
     )
   }
@@ -412,7 +441,7 @@ export function ReasoningPageClient({ organizations, currentOrganization }: Reas
         <TrialBannerWrapper />
       </TrialProvider>
       
-      <div className="p-6 space-y-6 max-w-7xl mx-auto">
+      <div className="p-6 space-y-6 max-w-7xl mx-auto pb-32">
         {/* Header */}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center gap-3 mb-4">
@@ -428,36 +457,7 @@ export function ReasoningPageClient({ organizations, currentOrganization }: Reas
           </p>
         </div>
 
-        {/* Query Input */}
-        <Card className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex gap-3">
-              <Input
-                placeholder="What happens if Khalti expands into crypto remittances?"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && !isAnalyzing && handleAnalyze()}
-                className="flex-1 h-10 bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800 focus:border-blue-500 focus:ring-blue-500"
-              />
-              <Button
-                onClick={handleAnalyze}
-                disabled={isAnalyzing || !query.trim()}
-                className="h-10 px-6 bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {isAnalyzing ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                ) : (
-                  <>
-                    <IoSend className="h-4 w-4 mr-2" />
-                    Analyze
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Thought Process */}
+        {/* Forward Chain of Thought */}
         <ThoughtProcessDisplay />
 
         {/* Results */}
@@ -714,6 +714,14 @@ export function ReasoningPageClient({ organizations, currentOrganization }: Reas
           )}
         </AnimatePresence>
       </div>
+
+      {/* Floating Prompt Bar */}
+      <FloatingPromptBar
+        prompt={query}
+        onPromptChange={setQuery}
+        onSubmit={handleAnalyze}
+        isLoading={isAnalyzing}
+      />
     </div>
   )
 }

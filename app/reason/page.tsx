@@ -3,7 +3,11 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { ReasoningPageClient } from "@/components/reasoning/reasoning-page-client";
 
-export default async function ReasonPage() {
+interface ReasonPageProps {
+  searchParams: { prompt?: string }
+}
+
+export default async function ReasonPage({ searchParams }: ReasonPageProps) {
   const { userId } = await auth();
 
   if (!userId) {
@@ -44,6 +48,7 @@ export default async function ReasonPage() {
     <ReasoningPageClient 
       organizations={organizations}
       currentOrganization={currentOrganization}
+      initialPrompt={searchParams.prompt}
     />
   );
 }
