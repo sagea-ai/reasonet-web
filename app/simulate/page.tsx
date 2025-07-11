@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation';
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { TrialProvider } from '@/components/trial/trial-provider';
-import { TrialBannerWrapper } from '@/components/trial/trial-banner-wrapper';
 import { SimulateClientWrapper } from '@/components/simulate/SimulateClientWrapper';
 
 export default async function SimulatePage() {
@@ -52,6 +51,7 @@ export default async function SimulatePage() {
       <SimulateClientWrapper
         organizations={organizations}
         currentOrganization={organizations[0]}
+        //@ts-ignore
         user={{
           fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || undefined,
           firstName: user.firstName || undefined,
@@ -61,3 +61,4 @@ export default async function SimulatePage() {
     </TrialProvider>
   );
 }
+
