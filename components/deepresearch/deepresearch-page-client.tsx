@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { SessionNavBar } from "@/components/ui/sidebar"
+import { LuSend } from "react-icons/lu";
 import { useUser } from '@clerk/nextjs'
 import { 
   IoSearchOutline, 
@@ -103,10 +104,12 @@ const TypewriterText = ({
   shouldStart?: boolean;
 }) => {
   const [displayedText, setDisplayedText] = useState('')
+  const [isComplete, setIsComplete] = useState(false)
 
   useEffect(() => {
     if (!shouldStart) {
       setDisplayedText('')
+      setIsComplete(false)
       return
     }
 
@@ -118,12 +121,15 @@ const TypewriterText = ({
         setDisplayedText(text.slice(0, currentIndex + 1))
         currentIndex++
         timeoutId = setTimeout(typeNextChar, speed)
-      } else {
+      } else if (!isComplete) {
+        setIsComplete(true)
         onComplete?.()
       }
     }
 
+    // Reset and start typing
     setDisplayedText('')
+    setIsComplete(false)
     currentIndex = 0
     timeoutId = setTimeout(typeNextChar, speed)
 
@@ -145,7 +151,7 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
   const [researchHistory, setResearchHistory] = useState<string[]>([])
   const [reasoning, setReasoning] = useState<ReasoningProcess | null>(null)
   const [showReasoning, setShowReasoning] = useState(false)
-  const [currentStep, setCurrentStep] = useState<string>('')
+  const [currentReasoningStep, setCurrentReasoningStep] = useState<string>('')
   const [reasoningPhase, setReasoningPhase] = useState<'forward' | 'backward' | 'validation' | 'synthesis'>('forward')
   const carouselRef = useRef<HTMLDivElement>(null)
 
@@ -209,7 +215,7 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
       backwardReasoning: [],
       validation: []
     })
-    setCurrentStep('Initializing research process...')
+    setCurrentReasoningStep('Initializing research process...')
     setReasoningPhase('forward')
 
     try {
@@ -244,7 +250,7 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
                 const data = JSON.parse(line.slice(6))
                 
                 if (data.type === 'reasoning') {
-                  setCurrentStep(data.step)
+                  setCurrentReasoningStep(data.step)
                   setReasoningPhase(data.reasoningType)
                   setReasoning(prev => {
                     if (!prev) return prev
@@ -268,7 +274,7 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
                   })
                 } else if (data.type === 'result') {
                   setResult(data.result)
-                  setCurrentStep('')
+                  setCurrentReasoningStep('')
                 }
               } catch (e) {
                 console.error('Failed to parse SSE data:', e)
@@ -386,14 +392,14 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
                     }
                   }}
                   placeholder="Enter research topic..."
-                  className="w-full px-6 py-4 text-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent shadow-sm"
+                  className="w-full px-6 py-4 text-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-1 focus:ring-sky-500/50 focus:border-transparent shadow-sm"
                 />
                 <button
                   onClick={handleResearch}
                   disabled={!query.trim() || isResearching}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-sky-600 hover:text-sky-800 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-sky-600 hover:text-sky-800 disabled:text-gray-400 disabled:cursor-not-allowed rounded-full transition-colors"
                 >
-                  <IoSearchOutline className="w-6 h-6" />
+                  <LuSend  className="w-6 h-6" />
                 </button>
               </div>
             </div>
@@ -477,16 +483,9 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
           >
             <div className="border-l border-gray-200 dark:border-gray-700 pl-6">
               <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {isResearching ? 'Reasoning Process' : 'Completed Reasoning'}
-                  </h3>
-                  {isResearching && (
-                    <Badge variant="outline" className="text-xs">
-                      {getPhaseLabel(reasoningPhase)}
-                    </Badge>
-                  )}
-                </div>
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {isResearching ? 'Thinking...' : 'Reasoning'}
+                </h3>
                 <button
                   onClick={() => setShowReasoning(!showReasoning)}
                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
@@ -500,101 +499,83 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
               </div>
 
               {/* Current step when processing */}
-              {isResearching && currentStep && (
-                <div className="mb-4 p-4 bg-sky-50 dark:bg-sky-950/30 rounded-lg border border-sky-200 dark:border-sky-800">
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-sky-500 rounded-full mt-2 animate-pulse"></div>
-                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                      <TypewriterText 
-                        text={currentStep} 
-                        speed={20}
-                        shouldStart={true}
-                      />
-                    </p>
-                  </div>
-                </div>
+              {isResearching && currentReasoningStep && (
+                <motion.div
+                  key={currentReasoningStep}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="mb-6 pb-6 border-b border-gray-100 dark:border-gray-800"
+                >
+                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                    {currentReasoningStep}
+                  </p>
+                </motion.div>
               )}
 
-              {/* Reasoning Steps */}
-              <AnimatePresence>
-                {showReasoning && reasoning && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="space-y-6"
-                  >
-                    {/* Forward Reasoning */}
-                    {reasoning.forwardReasoning.length > 0 && (
-                      <div>
-                        <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
-                          Forward Reasoning
-                        </h4>
-                        <div className="space-y-3">
-                          {reasoning.forwardReasoning.map((step, index) => (
-                            <motion.div
-                              key={index}
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: index * 0.1 }}
-                              className="flex items-start gap-3 text-sm text-gray-600 dark:text-gray-400"
-                            >
-                              <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 shrink-0"></div>
-                              <p className="leading-relaxed">{step.step}</p>
-                            </motion.div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+              {showReasoning && (
+                <div className="space-y-4">
+                  {/* Forward Reasoning */}
+                  {reasoning.forwardReasoning.length > 0 && (
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                        Forward Reasoning
+                      </h4>
+                      {reasoning.forwardReasoning.map((step, index) => (
+                        <motion.div
+                          key={`forward-${index}`}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.1 }}
+                          className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed font-light pl-4 border-l-2 border-blue-200 dark:border-blue-800"
+                        >
+                          {step.step}
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
 
-                    {/* Backward Reasoning */}
-                    {reasoning.backwardReasoning.length > 0 && (
-                      <div>
-                        <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
-                          Backward Reasoning
-                        </h4>
-                        <div className="space-y-3">
-                          {reasoning.backwardReasoning.map((step, index) => (
-                            <motion.div
-                              key={index}
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: index * 0.1 }}
-                              className="flex items-start gap-3 text-sm text-gray-600 dark:text-gray-400"
-                            >
-                              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 shrink-0"></div>
-                              <p className="leading-relaxed">{step.step}</p>
-                            </motion.div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                  {/* Backward Reasoning */}
+                  {reasoning.backwardReasoning.length > 0 && (
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                        Backward Reasoning
+                      </h4>
+                      {reasoning.backwardReasoning.map((step, index) => (
+                        <motion.div
+                          key={`backward-${index}`}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.1 }}
+                          className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed font-light pl-4 border-l-2 border-green-200 dark:border-green-800"
+                        >
+                          {step.step}
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
 
-                    {/* Validation */}
-                    {reasoning.validation.length > 0 && (
-                      <div>
-                        <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
-                          Validation
-                        </h4>
-                        <div className="space-y-3">
-                          {reasoning.validation.map((step, index) => (
-                            <motion.div
-                              key={index}
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: index * 0.1 }}
-                              className="flex items-start gap-3 text-sm text-gray-600 dark:text-gray-400"
-                            >
-                              <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mt-2 shrink-0"></div>
-                              <p className="leading-relaxed">{step.step}</p>
-                            </motion.div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                  {/* Validation */}
+                  {reasoning.validation.length > 0 && (
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                        Validation
+                      </h4>
+                      {reasoning.validation.map((step, index) => (
+                        <motion.div
+                          key={`validation-${index}`}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.1 }}
+                          className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed font-light pl-4 border-l-2 border-yellow-200 dark:border-yellow-800"
+                        >
+                          {step.step}
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </motion.div>
         )}
