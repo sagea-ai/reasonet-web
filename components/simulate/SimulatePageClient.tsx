@@ -8,13 +8,39 @@ import { ComponentPalette } from '@/components/simulate/ComponentPalette'
 import { SimulateToolbar } from '@/components/simulate/SimulateToolbar'
 import { FloatingPromptBar } from '@/components/simulate/FloatingPromptBar'
 import { TrialBannerWrapper } from "../trial/trial-banner-wrapper"
+import { Button } from '@/components/ui/button'
+
+interface Organization {
+  id: string;
+  name: string;
+}
+
+interface User {
+  id: string;
+  name: string;
+}
 
 
-export function SimulatePageClient() {
+interface SimulatePageClientProps {
+  organizations: Organization[];
+  currentOrganization: Organization;
+  user: User;
+  onRunWorkflow: (workflow: any) => void;
+  isRunningWorkflow: boolean;
+}
+
+export function SimulatePageClient({ 
+  organizations, 
+  currentOrganization, 
+  user,
+  onRunWorkflow,
+  isRunningWorkflow
+}: SimulatePageClientProps) {
   const router = useRouter()
   const [currentPrompt, setCurrentPrompt] = useState('')
   const [isAnimating, setIsAnimating] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [workflow, setWorkflow] = useState<any>(null)
 
   const handleGeneratePrompt = (prompt: string) => {
     setIsAnimating(true)
@@ -29,6 +55,12 @@ export function SimulatePageClient() {
     const encodedPrompt = encodeURIComponent(prompt)
     router.push(`/reason?prompt=${encodedPrompt}`)
   }
+
+  const handleRunWorkflow = () => {
+    if (workflow) {
+      onRunWorkflow(workflow);
+    }
+  };
 
   return (
     <div className='h-screen'>
@@ -49,6 +81,15 @@ export function SimulatePageClient() {
           isAnimating={isAnimating}
           isLoading={isLoading}
         />
+      </div>
+      <div className="p-8">
+        <Button 
+          onClick={handleRunWorkflow}
+          disabled={!workflow || isRunningWorkflow}
+          className="..."
+        >
+          {isRunningWorkflow ? 'Running...' : 'Run Workflow'}
+        </Button>
       </div>
     </div>
   )
