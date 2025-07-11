@@ -234,7 +234,7 @@ Provide 4-6 validation steps using this exact pattern.`
 Conduct exhaustive research and provide a JSON response with this exact structure:
 {
   "query": "The research query",
-  "summary": "A comprehensive 4-5 sentence summary covering current state, key trends, challenges, opportunities, and future outlook",
+  "summary": "A comprehensive 7-9 sentence summary covering current state, key trends, challenges, opportunities, and future outlook",
   "insights": [
     {
       "id": "unique_id",
