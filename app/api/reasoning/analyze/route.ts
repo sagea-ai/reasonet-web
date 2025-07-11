@@ -83,13 +83,17 @@ Focus on business implications, regulatory considerations, market dynamics, and 
       throw new Error('No content received from AI')
     }
 
+    console.log('Raw AI response:', content)
+
     // Try to parse the JSON response
     try {
       const jsonMatch = content.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
         const analysisData = JSON.parse(jsonMatch[0])
+        console.log('Parsed analysis data:', JSON.stringify(analysisData, null, 2))
         return NextResponse.json(analysisData)
       } else {
+        console.log('No JSON found in response')
         throw new Error('No JSON found in response')
       }
     } catch (parseError) {
