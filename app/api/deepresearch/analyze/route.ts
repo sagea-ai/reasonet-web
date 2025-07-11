@@ -240,7 +240,7 @@ Conduct exhaustive research and provide a JSON response with this exact structur
       "id": "unique_id",
       "category": "Specific research domain/category",
       "finding": "Detailed finding with specific data points and implications",
-      "confidence": 85,
+      "confidence": [random number above 79 but less than 95],
       "impact": "high|medium|low",
       "sources": ["source1", "source2", "source3"]
     }
@@ -280,6 +280,7 @@ Conduct exhaustive research and provide a JSON response with this exact structur
 
 Requirements for deep research:
 - Generate 8-12 detailed insights across multiple domains
+- make sure to cite only the latest and most relevant sources as much as possible
 - Include 6-10 comprehensive trend analyses
 - Provide 15-20 diverse, credible sources from multiple domains
 - Create 5-8 probabilistic scenarios with realistic probability distributions
