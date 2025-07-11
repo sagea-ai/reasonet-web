@@ -317,11 +317,11 @@ export function OrganizationForm({ organization }: OrganizationFormProps) {
               </div>
               <p className="text-sm text-sky-700 dark:text-sky-300">Ideas Analyzed</p>
             </div>
-            <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            <div className="text-center p-4 bg-sky-50 dark:bg-sky-900/20 rounded-lg">
+              <div className="text-2xl font-bold text-sky-600 dark:text-sky-400">
                 {organization._count?.members || 0}
               </div>
-              <p className="text-sm text-blue-700 dark:text-blue-300">Active Members</p>
+              <p className="text-sm text-sky-700 dark:text-sky-300">Active Members</p>
             </div>
             <div className="text-center p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
               <div className="text-base font-semibold text-amber-600 dark:text-amber-400">

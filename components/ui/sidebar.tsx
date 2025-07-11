@@ -16,7 +16,7 @@ import {
   UserCircle,
   UserCog,
 } from "lucide-react";
-import { BsCreditCard2FrontFill } from "react-icons/bs";
+import { BsCreditCard2FrontFill, BsGlobeAmericas } from "react-icons/bs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import Link from "next/link";
 import { PiCodeBold, PiPlugsFill } from "react-icons/pi";
@@ -278,15 +278,15 @@ export function SessionNavBar({
                       </motion.span>
                     </Link>
                     <Link
-                      href="/archive"
+                      href="/deepresearch"
                       className={cn(
                         "flex h-9 w-full items-center gap-3 rounded-lg px-2 text-sm font-medium transition-colors hover:bg-sky-50 hover:text-sky-700",
-                        pathname?.includes("archive") && "bg-sky-100 text-sky-700",
+                        pathname?.includes("deepresearch") && "bg-sky-100 text-sky-700",
                       )}
                     >
-                      <SiElasticstack className="h-4 w-4 shrink-0" />
+                      <BsGlobeAmericas className="h-4 w-4 shrink-0" />
                       <motion.span variants={variants} className="truncate">
-                        {!isCollapsed && "Simulation Runs"}
+                        {!isCollapsed && "Deep Research"}
                       </motion.span>
                     </Link>
                     <Link
