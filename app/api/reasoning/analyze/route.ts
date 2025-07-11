@@ -19,54 +19,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 })
     }
 
-    const systemPrompt = `You are an expert strategic reasoning AI that maps out the downstream consequences of decisions across law, policy, and product domains for startup founders and VCs.
+    const systemPrompt = `You are an expert business strategist and scenario planner that analyzes business ideas and identifies potential gaps and opportunities.
 
-Analyze the given strategic decision and provide a JSON response with this exact structure:
+Analyze the given business idea/workflow and provide a JSON response with this exact structure:
+
 {
-  "stakeholders": [
+  "businessSummary": "Brief overview of the business idea",
+  "scenarios": [
     {
-      "name": "Stakeholder name",
-      "impact": "high|medium|low",
-      "type": "individual|organization|government|market"
-    }
-  ],
-  "outcomes": [
-    {
-      "id": "unique_id",
-      "title": "Outcome title",
+      "title": "Scenario title",
+      "type": "Growth/Challenge/Opportunity/Risk",
       "probability": 75,
-      "impact": "positive|negative|neutral",
-      "description": "Detailed description",
-      "timeline": "Timeline estimate",
-      "stakeholders": ["affected stakeholder names"]
+      "timeframe": "Short-term/Medium-term/Long-term",
+      "description": "Detailed explanation of what could happen"
     }
   ],
-  "causalChains": [
+  "backwardReasoning": [
     {
-      "id": "chain_id",
-      "sequence": [
-        {
-          "step": 1,
-          "event": "What happens",
-          "reasoning": "Why this happens",
-          "confidence": 85
-        }
-      ]
+      "finalOutcome": "What we're trying to achieve or avoid",
+      "requiredConditions": "What needs to be true",
+      "causalChain": "Step-by-step reasoning backwards",
+      "criticalAssumptions": "Key assumptions this scenario depends on",
+      "riskFactors": "What could go wrong"
     }
   ],
-  "riskMatrix": [
-    {
-      "category": "Risk category",
-      "probability": 60,
-      "impact": 7,
-      "mitigation": "How to mitigate"
-    }
-  ],
-  "reasoning": "Explanation of your thought process and methodology",
-  "confidence": 80
+  "recommendations": "Key actionable recommendations"
 }
 
-Focus on business implications, regulatory considerations, market dynamics, and competitive responses. Be concise and actionable. Return only valid JSON.`
+Generate exactly 3 scenarios with their corresponding backward reasoning. Be specific and practical. Return only valid JSON.`
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
@@ -85,8 +65,8 @@ Focus on business implications, regulatory considerations, market dynamics, and 
 
     console.log('Raw AI response:', content)
 
-    // Try to parse the JSON response
     try {
+      // Try to parse the JSON response
       const jsonMatch = content.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
         const analysisData = JSON.parse(jsonMatch[0])
@@ -103,6 +83,7 @@ Focus on business implications, regulatory considerations, market dynamics, and 
         { status: 500 }
       )
     }
+
   } catch (error) {
     console.error('Reasoning analysis error:', error)
     return NextResponse.json(
