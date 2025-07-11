@@ -15,53 +15,35 @@ import {
   IoBusinessOutline,
   IoGlobeOutline,
   IoWarningOutline,
-  IoCheckmarkCircleOutline
+  IoCheckmarkCircleOutline,
+  IoRefreshOutline
 } from 'react-icons/io5'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import { TrialProvider } from '../trial/trial-provider'
 import { TrialBannerWrapper } from '../trial/trial-banner-wrapper'
 
-interface Stakeholder {
-  name: string
-  impact: 'high' | 'medium' | 'low'
-  type: 'individual' | 'organization' | 'government' | 'market'
-}
-
-interface Outcome {
-  id: string
+interface Scenario {
   title: string
+  type: string
   probability: number
-  impact: 'positive' | 'negative' | 'neutral'
+  timeframe: string
   description: string
-  timeline: string
-  stakeholders: string[]
 }
 
-interface CausalChain {
-  id: string
-  sequence: Array<{
-    step: number
-    event: string
-    reasoning: string
-    confidence: number
-  }>
-}
-
-interface RiskMatrix {
-  category: string
-  probability: number
-  impact: number
-  mitigation: string
+interface BackwardReasoning {
+  finalOutcome: string
+  requiredConditions: string
+  causalChain: string
+  criticalAssumptions: string
+  riskFactors: string
 }
 
 interface ReasoningResult {
-  stakeholders: Stakeholder[]
-  outcomes: Outcome[]
-  causalChains: CausalChain[]
-  riskMatrix: RiskMatrix[]
-  reasoning: string
-  confidence: number
+  businessSummary: string
+  scenarios: Scenario[]
+  backwardReasoning: BackwardReasoning[]
+  recommendations: string
 }
 
 interface Organization {
@@ -76,31 +58,18 @@ interface ReasoningPageClientProps {
   initialPrompt?: string
 }
 
-interface ThoughtProcess {
-  thinking: string
-  stakeholder_analysis: string
-  outcome_modeling: string
-  causal_reasoning: string
-  risk_assessment: string
-}
-
-interface StreamingState {
-  isStreaming: boolean
-  currentThought: string
-  thoughtProcess: ThoughtProcess
-  currentSection: keyof ThoughtProcess | null
-}
-
 export function ReasoningPageClient({ organizations, currentOrganization, initialPrompt }: ReasoningPageClientProps) {
   const [query, setQuery] = useState(initialPrompt || '')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [result, setResult] = useState<ReasoningResult | null>(null)
+  const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set())
 
   const handleAnalyze = async () => {
     if (!query.trim()) return
 
     setIsAnalyzing(true)
     setResult(null)
+    setFlippedCards(new Set())
 
     try {
       const response = await fetch('/api/reasoning/analyze', {
@@ -139,32 +108,24 @@ export function ReasoningPageClient({ organizations, currentOrganization, initia
     }
   }, [initialPrompt])
 
-  const getStakeholderIcon = (type: string) => {
-    switch (type) {
-      case 'individual': return <IoPersonOutline className="w-4 h-4" />
-      case 'organization': return <IoBusinessOutline className="w-4 h-4" />
-      case 'government': return <IoGlobeOutline className="w-4 h-4" />
-      case 'market': return <IoAnalyticsOutline className="w-4 h-4" />
-      default: return <IoPersonOutline className="w-4 h-4" />
-    }
-  }
-
-  const getImpactColor = (impact: string) => {
-    switch (impact) {
-      case 'high': return 'text-red-600 bg-red-50 border-red-200'
-      case 'medium': return 'text-amber-600 bg-amber-50 border-amber-200'
-      case 'low': return 'text-green-600 bg-green-50 border-green-200'
+  const getTypeColor = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'growth': return 'text-green-600 bg-green-50 border-green-200'
+      case 'challenge': return 'text-red-600 bg-red-50 border-red-200'
+      case 'opportunity': return 'text-blue-600 bg-blue-50 border-blue-200'
+      case 'risk': return 'text-orange-600 bg-orange-50 border-orange-200'
       default: return 'text-gray-600 bg-gray-50 border-gray-200'
     }
   }
 
-  const getOutcomeColor = (impact: string) => {
-    switch (impact) {
-      case 'positive': return 'text-green-600 bg-green-50'
-      case 'negative': return 'text-red-600 bg-red-50'
-      case 'neutral': return 'text-gray-600 bg-gray-50'
-      default: return 'text-gray-600 bg-gray-50'
+  const toggleCard = (index: number) => {
+    const newFlippedCards = new Set(flippedCards)
+    if (newFlippedCards.has(index)) {
+      newFlippedCards.delete(index)
+    } else {
+      newFlippedCards.add(index)
     }
+    setFlippedCards(newFlippedCards)
   }
 
   return (
@@ -224,7 +185,7 @@ export function ReasoningPageClient({ organizations, currentOrganization, initia
                 Analyzing scenario
               </h2>
               <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed">
-                Mapping stakeholders, outcomes, and causal relationships
+                Identifying gaps and mapping potential outcomes
               </p>
             </div>
           </motion.div>
@@ -239,149 +200,179 @@ export function ReasoningPageClient({ organizations, currentOrganization, initia
               exit={{ opacity: 0, y: -20 }}
               className="space-y-12"
             >
-              {/* Key Stakeholders */}
-              <div className="space-y-6">
-                <h2 className="text-2xl font-light text-gray-900 dark:text-white flex items-center gap-3">
-                  <IoPersonOutline className="w-6 h-6" />
-                  Key Stakeholders
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {result.stakeholders.map((stakeholder, index) => (
-                    <Card key={index} className="border-0 shadow-sm bg-gray-50/50 dark:bg-gray-950/50">
-                      <CardContent className="p-6">
-                        <div className="flex items-start gap-4">
-                          <div className="p-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
-                            {getStakeholderIcon(stakeholder.type)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-gray-900 dark:text-white mb-2 leading-tight">
-                              {stakeholder.name}
-                            </h3>
-                            <Badge className={`text-xs ${getImpactColor(stakeholder.impact)} border`}>
-                              {stakeholder.impact} impact
-                            </Badge>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+              {/* Business Summary */}
+              {result.businessSummary && (
+                <div className="space-y-6">
+                  <h2 className="text-2xl font-light text-gray-900 dark:text-white flex items-center gap-3">
+                    <IoBusinessOutline className="w-6 h-6" />
+                    Business Analysis
+                  </h2>
+                  <Card className="border-0 shadow-sm bg-gray-50/50 dark:bg-gray-950/50">
+                    <CardContent className="p-6">
+                      <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                        {result.businessSummary}
+                      </p>
+                    </CardContent>
+                  </Card>
                 </div>
-              </div>
+              )}
 
-              {/* Potential Outcomes */}
-              <div className="space-y-6">
-                <h2 className="text-2xl font-light text-gray-900 dark:text-white flex items-center gap-3">
-                  <IoAnalyticsOutline className="w-6 h-6" />
-                  Potential Outcomes
-                </h2>
-                <div className="space-y-4">
-                  {result.outcomes.map((outcome) => (
-                    <Card key={outcome.id} className="border-0 shadow-sm bg-gray-50/50 dark:bg-gray-950/50">
-                      <CardContent className="p-6">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-3">
-                              <h3 className="font-medium text-gray-900 dark:text-white">
-                                {outcome.title}
-                              </h3>
-                              <Badge className={`text-xs ${getOutcomeColor(outcome.impact)}`}>
-                                {outcome.impact}
-                              </Badge>
-                            </div>
-                            <p className="text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
-                              {outcome.description}
-                            </p>
-                            <div className="flex items-center gap-6 text-sm text-gray-500">
-                              <span className="flex items-center gap-2">
-                                <IoTimeOutline className="w-4 h-4" />
-                                {outcome.timeline}
-                              </span>
-                              <span>Probability: {outcome.probability}%</span>
-                            </div>
-                          </div>
-                          <div className="ml-6 text-right">
-                            <div className="w-16 h-16 bg-white dark:bg-gray-900 rounded-2xl flex items-center justify-center border border-gray-200 dark:border-gray-800">
-                              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                {outcome.probability}%
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
+              {/* Scenario Cards */}
+              {result.scenarios && result.scenarios.length > 0 && (
+                <div className="space-y-6">
+                  <h2 className="text-2xl font-light text-gray-900 dark:text-white flex items-center gap-3">
+                    <IoAnalyticsOutline className="w-6 h-6" />
+                    Potential Scenarios
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {result.scenarios.map((scenario, index) => {
+                      const backwardReasoning = result.backwardReasoning?.[index] || null
+                      const isFlipped = flippedCards.has(index)
 
-              {/* Causal Chains */}
-              <div className="space-y-6">
-                <h2 className="text-2xl font-light text-gray-900 dark:text-white flex items-center gap-3">
-                  <IoArrowForward className="w-6 h-6" />
-                  Causal Analysis
-                </h2>
-                <div className="space-y-8">
-                  {result.causalChains.map((chain) => (
-                    <Card key={chain.id} className="border-0 shadow-sm bg-gray-50/50 dark:bg-gray-950/50">
-                      <CardContent className="p-6">
-                        <div className="space-y-6">
-                          {chain.sequence.map((step, index) => (
-                            <div key={step.step} className="flex items-start gap-6">
-                              <div className="flex-shrink-0 w-10 h-10 bg-white dark:bg-gray-900 rounded-xl flex items-center justify-center border border-gray-200 dark:border-gray-800">
-                                <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                  {step.step}
-                                </span>
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-medium text-gray-900 dark:text-white mb-2">
-                                  {step.event}
-                                </h4>
-                                <p className="text-gray-600 dark:text-gray-300 mb-3 leading-relaxed">
-                                  {step.reasoning}
+                      return (
+                        <motion.div
+                          key={index}
+                          className="relative h-80 cursor-pointer"
+                          onClick={() => toggleCard(index)}
+                          style={{ perspective: '1000px' }}
+                        >
+                          <motion.div
+                            className="relative w-full h-full transition-transform duration-700 preserve-3d"
+                            animate={{ rotateY: isFlipped ? 180 : 0 }}
+                            style={{ transformStyle: 'preserve-3d' }}
+                          >
+                            {/* Front of card */}
+                            <Card className="absolute inset-0 border-0 shadow-sm bg-white dark:bg-gray-950 backface-hidden">
+                              <CardContent className="p-6 h-full flex flex-col">
+                                <div className="flex items-start justify-between mb-4">
+                                  <Badge className={`text-xs ${getTypeColor(scenario.type)} border`}>
+                                    {scenario.type}
+                                  </Badge>
+                                  <div className="text-right">
+                                    <div className="text-2xl font-light text-gray-900 dark:text-white">
+                                      {scenario.probability}%
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      {scenario.timeframe}
+                                    </div>
+                                  </div>
+                                </div>
+                                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3 leading-tight">
+                                  {scenario.title}
+                                </h3>
+                                <p className="text-gray-600 dark:text-gray-300 leading-relaxed flex-1">
+                                  {scenario.description}
                                 </p>
-                                <Badge variant="outline" className="text-xs">
-                                  Confidence: {step.confidence}%
-                                </Badge>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
+                                <div className="mt-4 flex items-center justify-center">
+                                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                                    <IoRefreshOutline className="w-4 h-4" />
+                                    Click to see reasoning
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
 
-              {/* Risk Assessment */}
-              <div className="space-y-6">
-                <h2 className="text-2xl font-light text-gray-900 dark:text-white flex items-center gap-3">
-                  <IoWarningOutline className="w-6 h-6" />
-                  Risk Assessment
-                </h2>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {result.riskMatrix.map((risk, index) => (
-                    <Card key={index} className="border-0 shadow-sm bg-gray-50/50 dark:bg-gray-950/50">
-                      <CardContent className="p-6">
-                        <div className="space-y-4">
-                          <h4 className="font-medium text-gray-900 dark:text-white">
-                            {risk.category}
-                          </h4>
-                          <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                            {risk.mitigation}
-                          </p>
-                          <div className="flex gap-3">
-                            <Badge variant="outline" className="text-xs">
-                              Probability: {risk.probability}%
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              Impact: {risk.impact}/10
-                            </Badge>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                            {/* Back of card */}
+                            <Card className="absolute inset-0 border-0 shadow-sm bg-blue-50 dark:bg-blue-950/30 backface-hidden rotate-y-180">
+                              <CardContent className="p-6 h-full flex flex-col">
+                                <div className="flex items-center gap-2 mb-4">
+                                  <IoArrowForward className="w-5 h-5 text-blue-600" />
+                                  <h4 className="font-medium text-blue-900 dark:text-blue-100">
+                                    Backward Reasoning
+                                  </h4>
+                                </div>
+                                {backwardReasoning ? (
+                                  <div className="space-y-3 text-sm flex-1 overflow-y-auto">
+                                    {backwardReasoning.finalOutcome && (
+                                      <div>
+                                        <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">
+                                          Final Outcome:
+                                        </div>
+                                        <div className="text-blue-700 dark:text-blue-300">
+                                          {backwardReasoning.finalOutcome}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {backwardReasoning.requiredConditions && (
+                                      <div>
+                                        <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">
+                                          Required Conditions:
+                                        </div>
+                                        <div className="text-blue-700 dark:text-blue-300">
+                                          {backwardReasoning.requiredConditions}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {backwardReasoning.causalChain && (
+                                      <div>
+                                        <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">
+                                          Causal Chain:
+                                        </div>
+                                        <div className="text-blue-700 dark:text-blue-300">
+                                          {backwardReasoning.causalChain}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {backwardReasoning.criticalAssumptions && (
+                                      <div>
+                                        <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">
+                                          Critical Assumptions:
+                                        </div>
+                                        <div className="text-blue-700 dark:text-blue-300">
+                                          {backwardReasoning.criticalAssumptions}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {backwardReasoning.riskFactors && (
+                                      <div>
+                                        <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">
+                                          Risk Factors:
+                                        </div>
+                                        <div className="text-blue-700 dark:text-blue-300">
+                                          {backwardReasoning.riskFactors}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="text-blue-700 dark:text-blue-300 text-sm">
+                                    No backward reasoning available for this scenario.
+                                  </div>
+                                )}
+                                <div className="mt-4 flex items-center justify-center">
+                                  <div className="flex items-center gap-2 text-sm text-blue-600">
+                                    <IoRefreshOutline className="w-4 h-4" />
+                                    Click to see scenario
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </motion.div>
+                        </motion.div>
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Recommendations */}
+              {result.recommendations && (
+                <div className="space-y-6">
+                  <h2 className="text-2xl font-light text-gray-900 dark:text-white flex items-center gap-3">
+                    <IoCheckmarkCircleOutline className="w-6 h-6" />
+                    Key Recommendations
+                  </h2>
+                  <Card className="border-0 shadow-sm bg-gray-50/50 dark:bg-gray-950/50">
+                    <CardContent className="p-6">
+                      <div className="prose prose-gray dark:prose-invert max-w-none">
+                        <pre className="whitespace-pre-wrap text-gray-700 dark:text-gray-300 leading-relaxed font-sans">
+                          {result.recommendations}
+                        </pre>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -394,6 +385,18 @@ export function ReasoningPageClient({ organizations, currentOrganization, initia
         onSubmit={handleAnalyze}
         isLoading={isAnalyzing}
       />
+
+      <style jsx global>{`
+        .backface-hidden {
+          backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+          transform: rotateY(180deg);
+        }
+        .preserve-3d {
+          transform-style: preserve-3d;
+        }
+      `}</style>
     </div>
   )
 }
