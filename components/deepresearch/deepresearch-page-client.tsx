@@ -91,6 +91,30 @@ interface ReasoningProcess {
   validation: ReasoningStep[]
 }
 
+const TypewriterText = ({ text, speed = 30, onComplete }: { text: string; speed?: number; onComplete?: () => void }) => {
+  const [displayedText, setDisplayedText] = useState('')
+  const [currentIndex, setCurrentIndex] = useState(0)
+
+  useEffect(() => {
+    if (currentIndex < text.length) {
+      const timer = setTimeout(() => {
+        setDisplayedText(prev => prev + text[currentIndex])
+        setCurrentIndex(prev => prev + 1)
+      }, speed)
+      return () => clearTimeout(timer)
+    } else if (onComplete) {
+      onComplete()
+    }
+  }, [currentIndex, text, speed, onComplete])
+
+  useEffect(() => {
+    setDisplayedText('')
+    setCurrentIndex(0)
+  }, [text])
+
+  return <span>{displayedText}</span>
+}
+
 export function DeepResearchPageClient({ organizations, currentOrganization }: DeepResearchPageClientProps) {
   const { user } = useUser()
   const [query, setQuery] = useState('')
@@ -101,6 +125,7 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
   const [showReasoning, setShowReasoning] = useState(false)
   const [lastReasoningStep, setLastReasoningStep] = useState<string>('')
   const [reasoningPhase, setReasoningPhase] = useState<'forward' | 'backward' | 'validation' | 'synthesis'>('forward')
+  const [currentTypingStep, setCurrentTypingStep] = useState<number | null>(null)
   const carouselRef = useRef<HTMLDivElement>(null)
 
   const suggestionPrompts = [
@@ -165,6 +190,7 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
     })
     setLastReasoningStep('Initializing research process...')
     setReasoningPhase('forward')
+    setCurrentTypingStep(null)
 
     try {
       const response = await fetch('/api/deepresearch/analyze', {
@@ -217,11 +243,21 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
                     } else if (data.reasoningType === 'validation') {
                       updated.validation = [...prev.validation, newStep]
                     }
+                    
+                    // Set the current typing step to the latest one
+                    const allSteps = [
+                      ...updated.forwardReasoning,
+                      ...updated.backwardReasoning,
+                      ...updated.validation
+                    ].sort((a, b) => a.timestamp - b.timestamp)
+                    setCurrentTypingStep(allSteps.length - 1)
+                    
                     return updated
                   })
                 } else if (data.type === 'result') {
                   setResult(data.result)
                   setLastReasoningStep('')
+                  setCurrentTypingStep(null)
                 }
               } catch (e) {
                 console.error('Failed to parse SSE data:', e)
@@ -449,7 +485,10 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
               {isResearching && lastReasoningStep && (
                 <div className="mb-6 pb-6 border-b border-gray-100 dark:border-gray-800">
                   <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                    {lastReasoningStep}
+                    <TypewriterText 
+                      text={lastReasoningStep} 
+                      speed={20}
+                    />
                   </p>
                 </div>
               )}
@@ -465,7 +504,15 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
                     .sort((a, b) => a.timestamp - b.timestamp)
                     .map((step, index) => (
                       <div key={index} className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed font-light">
-                        {step.step}
+                        {currentTypingStep === index ? (
+                          <TypewriterText 
+                            text={step.step} 
+                            speed={15}
+                            onComplete={() => setCurrentTypingStep(null)}
+                          />
+                        ) : (
+                          currentTypingStep === null || currentTypingStep < index ? step.step : ''
+                        )}
                       </div>
                     ))}
                 </div>
