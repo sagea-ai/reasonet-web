@@ -91,26 +91,48 @@ interface ReasoningProcess {
   validation: ReasoningStep[]
 }
 
-const TypewriterText = ({ text, speed = 30, onComplete }: { text: string; speed?: number; onComplete?: () => void }) => {
+const TypewriterText = ({ 
+  text, 
+  speed = 30, 
+  onComplete,
+  shouldStart = true 
+}: { 
+  text: string; 
+  speed?: number; 
+  onComplete?: () => void;
+  shouldStart?: boolean;
+}) => {
   const [displayedText, setDisplayedText] = useState('')
-  const [currentIndex, setCurrentIndex] = useState(0)
 
   useEffect(() => {
-    if (currentIndex < text.length) {
-      const timer = setTimeout(() => {
-        setDisplayedText(prev => prev + text[currentIndex])
-        setCurrentIndex(prev => prev + 1)
-      }, speed)
-      return () => clearTimeout(timer)
-    } else if (onComplete) {
-      onComplete()
+    if (!shouldStart) {
+      setDisplayedText('')
+      return
     }
-  }, [currentIndex, text, speed, onComplete])
 
-  useEffect(() => {
+    let timeoutId: NodeJS.Timeout
+    let currentIndex = 0
+    
+    const typeNextChar = () => {
+      if (currentIndex < text.length) {
+        setDisplayedText(text.slice(0, currentIndex + 1))
+        currentIndex++
+        timeoutId = setTimeout(typeNextChar, speed)
+      } else {
+        onComplete?.()
+      }
+    }
+
     setDisplayedText('')
-    setCurrentIndex(0)
-  }, [text])
+    currentIndex = 0
+    timeoutId = setTimeout(typeNextChar, speed)
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+    }
+  }, [text, speed, onComplete, shouldStart])
 
   return <span>{displayedText}</span>
 }
@@ -123,9 +145,8 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
   const [researchHistory, setResearchHistory] = useState<string[]>([])
   const [reasoning, setReasoning] = useState<ReasoningProcess | null>(null)
   const [showReasoning, setShowReasoning] = useState(false)
-  const [lastReasoningStep, setLastReasoningStep] = useState<string>('')
+  const [currentStep, setCurrentStep] = useState<string>('')
   const [reasoningPhase, setReasoningPhase] = useState<'forward' | 'backward' | 'validation' | 'synthesis'>('forward')
-  const [currentTypingStep, setCurrentTypingStep] = useState<number | null>(null)
   const carouselRef = useRef<HTMLDivElement>(null)
 
   const suggestionPrompts = [
@@ -188,9 +209,8 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
       backwardReasoning: [],
       validation: []
     })
-    setLastReasoningStep('Initializing research process...')
+    setCurrentStep('Initializing research process...')
     setReasoningPhase('forward')
-    setCurrentTypingStep(null)
 
     try {
       const response = await fetch('/api/deepresearch/analyze', {
@@ -224,7 +244,7 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
                 const data = JSON.parse(line.slice(6))
                 
                 if (data.type === 'reasoning') {
-                  setLastReasoningStep(data.step)
+                  setCurrentStep(data.step)
                   setReasoningPhase(data.reasoningType)
                   setReasoning(prev => {
                     if (!prev) return prev
@@ -244,20 +264,11 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
                       updated.validation = [...prev.validation, newStep]
                     }
                     
-                    // Set the current typing step to the latest one
-                    const allSteps = [
-                      ...updated.forwardReasoning,
-                      ...updated.backwardReasoning,
-                      ...updated.validation
-                    ].sort((a, b) => a.timestamp - b.timestamp)
-                    setCurrentTypingStep(allSteps.length - 1)
-                    
                     return updated
                   })
                 } else if (data.type === 'result') {
                   setResult(data.result)
-                  setLastReasoningStep('')
-                  setCurrentTypingStep(null)
+                  setCurrentStep('')
                 }
               } catch (e) {
                 console.error('Failed to parse SSE data:', e)
@@ -466,9 +477,16 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
           >
             <div className="border-l border-gray-200 dark:border-gray-700 pl-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {isResearching ? 'Thinking...' : 'Reasoning'}
-                </h3>
+                <div className="flex items-center gap-3">
+                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {isResearching ? 'Reasoning Process' : 'Completed Reasoning'}
+                  </h3>
+                  {isResearching && (
+                    <Badge variant="outline" className="text-xs">
+                      {getPhaseLabel(reasoningPhase)}
+                    </Badge>
+                  )}
+                </div>
                 <button
                   onClick={() => setShowReasoning(!showReasoning)}
                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
@@ -482,41 +500,101 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
               </div>
 
               {/* Current step when processing */}
-              {isResearching && lastReasoningStep && (
-                <div className="mb-6 pb-6 border-b border-gray-100 dark:border-gray-800">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                    <TypewriterText 
-                      text={lastReasoningStep} 
-                      speed={20}
-                    />
-                  </p>
+              {isResearching && currentStep && (
+                <div className="mb-4 p-4 bg-sky-50 dark:bg-sky-950/30 rounded-lg border border-sky-200 dark:border-sky-800">
+                  <div className="flex items-start gap-3">
+                    <div className="w-2 h-2 bg-sky-500 rounded-full mt-2 animate-pulse"></div>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                      <TypewriterText 
+                        text={currentStep} 
+                        speed={20}
+                        shouldStart={true}
+                      />
+                    </p>
+                  </div>
                 </div>
               )}
 
-              {showReasoning && (
-                <div className="space-y-4">
-                  {/* All reasoning steps in chronological order */}
-                  {[
-                    ...reasoning.forwardReasoning,
-                    ...reasoning.backwardReasoning,
-                    ...reasoning.validation
-                  ]
-                    .sort((a, b) => a.timestamp - b.timestamp)
-                    .map((step, index) => (
-                      <div key={index} className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed font-light">
-                        {currentTypingStep === index ? (
-                          <TypewriterText 
-                            text={step.step} 
-                            speed={15}
-                            onComplete={() => setCurrentTypingStep(null)}
-                          />
-                        ) : (
-                          currentTypingStep === null || currentTypingStep < index ? step.step : ''
-                        )}
+              {/* Reasoning Steps */}
+              <AnimatePresence>
+                {showReasoning && reasoning && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-6"
+                  >
+                    {/* Forward Reasoning */}
+                    {reasoning.forwardReasoning.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
+                          Forward Reasoning
+                        </h4>
+                        <div className="space-y-3">
+                          {reasoning.forwardReasoning.map((step, index) => (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: index * 0.1 }}
+                              className="flex items-start gap-3 text-sm text-gray-600 dark:text-gray-400"
+                            >
+                              <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 shrink-0"></div>
+                              <p className="leading-relaxed">{step.step}</p>
+                            </motion.div>
+                          ))}
+                        </div>
                       </div>
-                    ))}
-                </div>
-              )}
+                    )}
+
+                    {/* Backward Reasoning */}
+                    {reasoning.backwardReasoning.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
+                          Backward Reasoning
+                        </h4>
+                        <div className="space-y-3">
+                          {reasoning.backwardReasoning.map((step, index) => (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: index * 0.1 }}
+                              className="flex items-start gap-3 text-sm text-gray-600 dark:text-gray-400"
+                            >
+                              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 shrink-0"></div>
+                              <p className="leading-relaxed">{step.step}</p>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Validation */}
+                    {reasoning.validation.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
+                          Validation
+                        </h4>
+                        <div className="space-y-3">
+                          {reasoning.validation.map((step, index) => (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: index * 0.1 }}
+                              className="flex items-start gap-3 text-sm text-gray-600 dark:text-gray-400"
+                            >
+                              <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mt-2 shrink-0"></div>
+                              <p className="leading-relaxed">{step.step}</p>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </motion.div>
         )}
