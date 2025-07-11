@@ -92,7 +92,7 @@ interface StreamingState {
 }
 
 export function ReasoningPageClient({ organizations, currentOrganization, initialPrompt }: ReasoningPageClientProps) {
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(initialPrompt || '')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [result, setResult] = useState<ReasoningResult | null>(null)
 
@@ -115,53 +115,16 @@ export function ReasoningPageClient({ organizations, currentOrganization, initia
         throw new Error('Failed to analyze')
       }
 
-      if (!response.body) {
-        throw new Error('No response body')
+      const analysisData = await response.json()
+      console.log('Received analysis data:', analysisData)
+      
+      if (analysisData.error) {
+        throw new Error(analysisData.error)
       }
+      
+      setResult(analysisData)
+      toast.success('Analysis completed')
 
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-      let accumulatedContent = ''
-
-      while (true) {
-        const { value, done } = await reader.read()
-        if (done) break
-
-        const chunk = decoder.decode(value)
-        const lines = chunk.split('\n')
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6)
-            if (data === '[DONE]') {
-              // Parse the accumulated content to extract JSON
-              const thinkingMatch = accumulatedContent.match(/<thinking>(.*?)<\/thinking>/)
-              const jsonMatch = accumulatedContent.match(/\{[\s\S]*\}/)
-              
-              if (jsonMatch) {
-                try {
-                  const analysisData = JSON.parse(jsonMatch[0])
-                  setResult(analysisData)
-                  toast.success('Analysis completed')
-                } catch (parseError) {
-                  console.error('Failed to parse JSON:', parseError)
-                  toast.error('Failed to parse analysis results')
-                }
-              }
-              return
-            }
-            
-            try {
-              const parsed = JSON.parse(data)
-              if (parsed.content) {
-                accumulatedContent += parsed.content
-              }
-            } catch (e) {
-              // Ignore parsing errors for individual chunks
-            }
-          }
-        }
-      }
     } catch (error) {
       console.error('Analysis failed:', error)
       toast.error('Failed to analyze. Please try again.')
@@ -169,6 +132,12 @@ export function ReasoningPageClient({ organizations, currentOrganization, initia
       setIsAnalyzing(false)
     }
   }
+
+  useEffect(() => {
+    if (initialPrompt && initialPrompt.trim()) {
+      handleAnalyze()
+    }
+  }, [initialPrompt])
 
   const getStakeholderIcon = (type: string) => {
     switch (type) {
