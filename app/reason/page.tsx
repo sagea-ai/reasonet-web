@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { ReasoningPageClient } from "@/components/reasoning/reasoning-page-client";
 
 interface ReasonPageProps {
-  searchParams: { prompt?: string }
+  searchParams: Promise<{ prompt?: string }>
 }
 
 export default async function ReasonPage({ searchParams }: ReasonPageProps) {
@@ -44,11 +44,13 @@ export default async function ReasonPage({ searchParams }: ReasonPageProps) {
     redirect("/onboarding");
   }
 
+  const resolvedSearchParams = await searchParams;
+
   return (
     <ReasoningPageClient 
       organizations={organizations}
       currentOrganization={currentOrganization}
-      initialPrompt={searchParams.prompt}
+      initialPrompt={resolvedSearchParams.prompt}
     />
   );
 }
