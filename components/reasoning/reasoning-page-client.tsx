@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { SessionNavBar } from "@/components/ui/sidebar"
-import { FloatingPromptBar } from "@/components/simulate/FloatingPromptBar"
 import { 
   IoFlashOutline, 
   IoAnalyticsOutline, 
@@ -16,7 +16,13 @@ import {
   IoGlobeOutline,
   IoWarningOutline,
   IoCheckmarkCircleOutline,
-  IoRefreshOutline
+  IoRefreshOutline,
+  IoStatsChartOutline,
+  IoTrendingUpOutline,
+  IoShieldCheckmarkOutline,
+  IoAlertCircleOutline,
+  IoDocumentTextOutline,
+  IoBarChartOutline
 } from 'react-icons/io5'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
@@ -29,6 +35,8 @@ interface Scenario {
   probability: number
   timeframe: string
   description: string
+  marketData?: string
+  verifiableFactors?: string
 }
 
 interface BackwardReasoning {
@@ -37,6 +45,7 @@ interface BackwardReasoning {
   causalChain: string
   criticalAssumptions: string
   riskFactors: string
+  dataSupport?: string
 }
 
 interface ReasoningResult {
@@ -44,6 +53,7 @@ interface ReasoningResult {
   scenarios: Scenario[]
   backwardReasoning: BackwardReasoning[]
   recommendations: string
+  dataDisclaimer?: string
 }
 
 interface Organization {
@@ -56,16 +66,53 @@ interface ReasoningPageClientProps {
   organizations: Organization[]
   currentOrganization: Organization
   initialPrompt?: string
+  autoAnalyze?: boolean
 }
 
-export function ReasoningPageClient({ organizations, currentOrganization, initialPrompt }: ReasoningPageClientProps) {
-  const [query, setQuery] = useState(initialPrompt || '')
+export function ReasoningPageClient({ 
+  organizations, 
+  currentOrganization, 
+  initialPrompt, 
+  autoAnalyze = false 
+}: ReasoningPageClientProps) {
+  const [query, setQuery] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [result, setResult] = useState<ReasoningResult | null>(null)
+  const [activeTab, setActiveTab] = useState('overview')
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set())
 
-  const handleAnalyze = async () => {
-    if (!query.trim()) return
+  // Handle workflow data from sessionStorage
+  useEffect(() => {
+    const workflowData = sessionStorage.getItem('workflowData')
+    if (workflowData) {
+      try {
+        const data = JSON.parse(workflowData)
+        setQuery(data.prompt)
+        // Clear the data after using it
+        sessionStorage.removeItem('workflowData')
+        
+        // Auto-trigger analysis if autoAnalyze is true
+        if (autoAnalyze) {
+          // Small delay to ensure state is set
+          setTimeout(() => {
+            handleAnalyzeWithPrompt(data.prompt)
+          }, 100)
+        }
+      } catch (error) {
+        console.error('Error parsing workflow data:', error)
+      }
+    } else if (initialPrompt) {
+      setQuery(initialPrompt)
+      if (autoAnalyze) {
+        setTimeout(() => {
+          handleAnalyzeWithPrompt(initialPrompt)
+        }, 100)
+      }
+    }
+  }, [initialPrompt, autoAnalyze])
+
+  const handleAnalyzeWithPrompt = async (promptText: string) => {
+    if (!promptText.trim()) return
 
     setIsAnalyzing(true)
     setResult(null)
@@ -77,7 +124,7 @@ export function ReasoningPageClient({ organizations, currentOrganization, initia
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query: promptText }),
       })
 
       if (!response.ok) {
@@ -102,22 +149,6 @@ export function ReasoningPageClient({ organizations, currentOrganization, initia
     }
   }
 
-  useEffect(() => {
-    if (initialPrompt && initialPrompt.trim()) {
-      handleAnalyze()
-    }
-  }, [initialPrompt])
-
-  const getTypeColor = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'growth': return 'text-green-600 bg-green-50 border-green-200'
-      case 'challenge': return 'text-red-600 bg-red-50 border-red-200'
-      case 'opportunity': return 'text-blue-600 bg-blue-50 border-blue-200'
-      case 'risk': return 'text-orange-600 bg-orange-50 border-orange-200'
-      default: return 'text-gray-600 bg-gray-50 border-gray-200'
-    }
-  }
-
   const toggleCard = (index: number) => {
     const newFlippedCards = new Set(flippedCards)
     if (newFlippedCards.has(index)) {
@@ -128,66 +159,74 @@ export function ReasoningPageClient({ organizations, currentOrganization, initia
     setFlippedCards(newFlippedCards)
   }
 
+  const getTypeIcon = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'growth': return <IoTrendingUpOutline className="w-5 h-5" />
+      case 'challenge': return <IoAlertCircleOutline className="w-5 h-5" />
+      case 'opportunity': return <IoCheckmarkCircleOutline className="w-5 h-5" />
+      case 'risk': return <IoWarningOutline className="w-5 h-5" />
+      default: return <IoAnalyticsOutline className="w-5 h-5" />
+    }
+  }
+
+  const getTypeColor = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'growth': return 'bg-green-50 text-green-700 border-green-200'
+      case 'challenge': return 'bg-red-50 text-red-700 border-red-200'
+      case 'opportunity': return 'bg-blue-50 text-blue-700 border-blue-200'
+      case 'risk': return 'bg-orange-50 text-orange-700 border-orange-200'
+      default: return 'bg-gray-50 text-gray-700 border-gray-200'
+    }
+  }
+
+  const getProbabilityColor = (probability: number) => {
+    if (probability >= 80) return 'text-red-600'
+    if (probability >= 60) return 'text-orange-600'
+    if (probability >= 40) return 'text-yellow-600'
+    return 'text-green-600'
+  }
+
   return (
-    <div className="min-h-screen bg-white dark:bg-black">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <SessionNavBar />
       <TrialProvider>
         <TrialBannerWrapper />
       </TrialProvider>
       
-      <div className="max-w-6xl mx-auto px-8 py-16 pb-32">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-900 rounded-2xl mb-8">
-            <IoFlashOutline className="w-8 h-8 text-gray-700 dark:text-gray-300" />
-          </div>
-          <h1 className="text-4xl font-light text-gray-900 dark:text-white mb-4 tracking-tight">
-            Strategic Reasoning
-          </h1>
-          <p className="text-lg text-gray-500 dark:text-gray-400 font-light max-w-2xl mx-auto leading-relaxed">
-            Map downstream consequences of strategic decisions for informed planning
-          </p>
-        </div>
-
-        {/* Empty State */}
-        {!result && !isAnalyzing && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center space-y-8"
-          >
-            <div className="w-24 h-24 bg-gray-50 dark:bg-gray-950 rounded-3xl mx-auto flex items-center justify-center border border-gray-200 dark:border-gray-800">
-              <IoAnalyticsOutline className="w-12 h-12 text-gray-400" />
+        <div className="mb-8">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="flex items-center justify-center w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+              <IoFlashOutline className="w-6 h-6 text-blue-600" />
             </div>
-            <div className="space-y-4">
-              <h2 className="text-2xl font-light text-gray-900 dark:text-white">
-                Ready to analyze
-              </h2>
-              <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed">
-                Describe your strategic decision or scenario below to begin the analysis
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                Strategic Analysis
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">
+                AI-powered workflow scenario analysis and recommendations
               </p>
             </div>
-          </motion.div>
-        )}
+          </div>
+        </div>
 
         {/* Loading State */}
         {isAnalyzing && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center space-y-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-16"
           >
-            <div className="w-24 h-24 bg-blue-50 dark:bg-blue-950/30 rounded-3xl mx-auto flex items-center justify-center border border-blue-200 dark:border-blue-800">
-              <IoFlashOutline className="w-12 h-12 text-blue-600 animate-pulse" />
+            <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl mx-auto flex items-center justify-center mb-6">
+              <IoFlashOutline className="w-8 h-8 text-blue-600 animate-pulse" />
             </div>
-            <div className="space-y-4">
-              <h2 className="text-2xl font-light text-gray-900 dark:text-white">
-                Analyzing scenario
-              </h2>
-              <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed">
-                Identifying gaps and mapping potential outcomes
-              </p>
-            </div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              Analyzing Your Workflow
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Processing scenarios and generating insights...
+            </p>
           </motion.div>
         )}
 
@@ -198,41 +237,104 @@ export function ReasoningPageClient({ organizations, currentOrganization, initia
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="space-y-12"
+              className="space-y-6"
             >
-              {/* Business Summary */}
-              {result.businessSummary && (
-                <div className="space-y-6">
-                  <h2 className="text-2xl font-light text-gray-900 dark:text-white flex items-center gap-3">
-                    <IoBusinessOutline className="w-6 h-6" />
-                    Business Analysis
-                  </h2>
-                  <Card className="border-0 shadow-sm bg-gray-50/50 dark:bg-gray-950/50">
-                    <CardContent className="p-6">
-                      <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                        {result.businessSummary}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                  <TabsTrigger value="overview" className="flex items-center gap-2">
+                    <IoBusinessOutline className="w-4 h-4" />
+                    Overview
+                  </TabsTrigger>
+                  <TabsTrigger value="scenarios" className="flex items-center gap-2">
+                    <IoBarChartOutline className="w-4 h-4" />
+                    Scenarios & Reasoning
+                  </TabsTrigger>
+                  <TabsTrigger value="recommendations" className="flex items-center gap-2">
+                    <IoCheckmarkCircleOutline className="w-4 h-4" />
+                    Actions
+                  </TabsTrigger>
+                </TabsList>
 
-              {/* Scenario Cards */}
-              {result.scenarios && result.scenarios.length > 0 && (
-                <div className="space-y-6">
-                  <h2 className="text-2xl font-light text-gray-900 dark:text-white flex items-center gap-3">
-                    <IoAnalyticsOutline className="w-6 h-6" />
-                    Potential Scenarios
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {result.scenarios.map((scenario, index) => {
-                      const backwardReasoning = result.backwardReasoning?.[index] || null
+                {/* Overview Tab */}
+                <TabsContent value="overview" className="space-y-6">
+                  {result.businessSummary && (
+                    <Card className="border-0 shadow-sm">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <IoBusinessOutline className="w-5 h-5 text-blue-600" />
+                          Business Analysis Overview
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                          {result.businessSummary}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Quick Stats */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card className="border-0 shadow-sm">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Total Scenarios</p>
+                            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                              {result.scenarios?.length || 0}
+                            </p>
+                          </div>
+                          <IoStatsChartOutline className="w-8 h-8 text-blue-600" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-0 shadow-sm">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Avg. Probability</p>
+                            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                              {result.scenarios?.length > 0 
+                                ? Math.round(result.scenarios.reduce((sum, s) => sum + s.probability, 0) / result.scenarios.length)
+                                : 0}%
+                            </p>
+                          </div>
+                          <IoAnalyticsOutline className="w-8 h-8 text-green-600" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-0 shadow-sm">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">High Risk</p>
+                            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                              {result.scenarios?.filter(s => s.probability >= 70).length || 0}
+                            </p>
+                          </div>
+                          <IoWarningOutline className="w-8 h-8 text-orange-600" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+
+                {/* Scenarios & Reasoning Tab */}
+                <TabsContent value="scenarios" className="space-y-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {result.scenarios?.map((scenario, index) => {
+                      const reasoning = result.backwardReasoning?.[index]
                       const isFlipped = flippedCards.has(index)
 
                       return (
                         <motion.div
                           key={index}
-                          className="relative h-80 cursor-pointer"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                          className="relative h-[400px] cursor-pointer"
                           onClick={() => toggleCard(index)}
                           style={{ perspective: '1000px' }}
                         >
@@ -241,29 +343,60 @@ export function ReasoningPageClient({ organizations, currentOrganization, initia
                             animate={{ rotateY: isFlipped ? 180 : 0 }}
                             style={{ transformStyle: 'preserve-3d' }}
                           >
-                            {/* Front of card */}
-                            <Card className="absolute inset-0 border-0 shadow-sm bg-white dark:bg-gray-950 backface-hidden">
-                              <CardContent className="p-6 h-full flex flex-col">
-                                <div className="flex items-start justify-between mb-4">
-                                  <Badge className={`text-xs ${getTypeColor(scenario.type)} border`}>
-                                    {scenario.type}
+                            {/* Front of card - Scenario */}
+                            <Card className="absolute inset-0 border-0 shadow-sm bg-white dark:bg-gray-800 backface-hidden h-[500px]">
+                              <CardHeader className="pb-3">
+                                <div className="flex items-start justify-between">
+                                  <Badge className={`${getTypeColor(scenario.type)} border text-xs font-medium`}>
+                                    <span className="flex items-center gap-1">
+                                      {getTypeIcon(scenario.type)}
+                                      {scenario.type}
+                                    </span>
                                   </Badge>
                                   <div className="text-right">
-                                    <div className="text-2xl font-light text-gray-900 dark:text-white">
+                                    <div className={`text-xl font-bold ${getProbabilityColor(scenario.probability)}`}>
                                       {scenario.probability}%
                                     </div>
-                                    <div className="text-xs text-gray-500">
+                                    <div className="text-xs text-gray-500 flex items-center gap-1">
+                                      <IoTimeOutline className="w-3 h-3" />
                                       {scenario.timeframe}
                                     </div>
                                   </div>
                                 </div>
-                                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3 leading-tight">
-                                  {scenario.title}
-                                </h3>
-                                <p className="text-gray-600 dark:text-gray-300 leading-relaxed flex-1">
-                                  {scenario.description}
-                                </p>
-                                <div className="mt-4 flex items-center justify-center">
+                              </CardHeader>
+                              <CardContent className="space-y-4 flex flex-col h-full">
+                                <div className="flex-1">
+                                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2 leading-tight">
+                                    {scenario.title}
+                                  </h3>
+                                  <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+                                    {scenario.description}
+                                  </p>
+                                </div>
+                                
+                                {scenario.marketData && (
+                                  <div className="border-t pt-3">
+                                    <h4 className="text-xs font-medium text-gray-900 dark:text-white mb-1">
+                                      Market Data
+                                    </h4>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                                      {scenario.marketData}
+                                    </p>
+                                  </div>
+                                )}
+                                
+                                {scenario.verifiableFactors && (
+                                  <div className="border-t pt-3">
+                                    <h4 className="text-xs font-medium text-gray-900 dark:text-white mb-1">
+                                      Verifiable Factors
+                                    </h4>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                                      {scenario.verifiableFactors}
+                                    </p>
+                                  </div>
+                                )}
+
+                                <div className="mt-4 flex items-center justify-center pt-3 border-t">
                                   <div className="flex items-center gap-2 text-sm text-gray-500">
                                     <IoRefreshOutline className="w-4 h-4" />
                                     Click to see reasoning
@@ -272,74 +405,92 @@ export function ReasoningPageClient({ organizations, currentOrganization, initia
                               </CardContent>
                             </Card>
 
-                            {/* Back of card */}
-                            <Card className="absolute inset-0 border-0 shadow-sm bg-blue-50 dark:bg-blue-950/30 backface-hidden rotate-y-180">
-                              <CardContent className="p-6 h-full flex flex-col">
-                                <div className="flex items-center gap-2 mb-4">
+                            {/* Back of card - Reasoning */}
+                            <Card className="absolute inset-0 border-0 shadow-sm bg-blue-50 dark:bg-blue-950/30 backface-hidden rotate-y-180 h-[550px]">
+                              <CardHeader className="pb-3">
+                                <div className="flex items-center gap-2">
                                   <IoArrowForward className="w-5 h-5 text-blue-600" />
-                                  <h4 className="font-medium text-blue-900 dark:text-blue-100">
+                                  <h4 className="font-semibold text-blue-900 dark:text-blue-100">
                                     Backward Reasoning
                                   </h4>
                                 </div>
-                                {backwardReasoning ? (
-                                  <div className="space-y-3 text-sm flex-1 overflow-y-auto">
-                                    {backwardReasoning.finalOutcome && (
+                              </CardHeader>
+                              <CardContent className="space-y-3 text-sm overflow-y-auto">
+                                {reasoning ? (
+                                  <>
+                                    {reasoning.finalOutcome && (
                                       <div>
                                         <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">
                                           Final Outcome:
                                         </div>
-                                        <div className="text-blue-700 dark:text-blue-300">
-                                          {backwardReasoning.finalOutcome}
+                                        <div className="text-blue-700 dark:text-blue-300 text-xs">
+                                          {reasoning.finalOutcome}
                                         </div>
                                       </div>
                                     )}
-                                    {backwardReasoning.requiredConditions && (
+                                    
+                                    {reasoning.requiredConditions && (
                                       <div>
                                         <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">
                                           Required Conditions:
                                         </div>
-                                        <div className="text-blue-700 dark:text-blue-300">
-                                          {backwardReasoning.requiredConditions}
+                                        <div className="text-blue-700 dark:text-blue-300 text-xs">
+                                          {reasoning.requiredConditions}
                                         </div>
                                       </div>
                                     )}
-                                    {backwardReasoning.causalChain && (
+                                    
+                                    {reasoning.causalChain && (
                                       <div>
                                         <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">
                                           Causal Chain:
                                         </div>
-                                        <div className="text-blue-700 dark:text-blue-300">
-                                          {backwardReasoning.causalChain}
+                                        <div className="text-blue-700 dark:text-blue-300 text-xs">
+                                          {reasoning.causalChain}
                                         </div>
                                       </div>
                                     )}
-                                    {backwardReasoning.criticalAssumptions && (
+                                    
+                                    {reasoning.criticalAssumptions && (
                                       <div>
                                         <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">
                                           Critical Assumptions:
                                         </div>
-                                        <div className="text-blue-700 dark:text-blue-300">
-                                          {backwardReasoning.criticalAssumptions}
+                                        <div className="text-blue-700 dark:text-blue-300 text-xs">
+                                          {reasoning.criticalAssumptions}
                                         </div>
                                       </div>
                                     )}
-                                    {backwardReasoning.riskFactors && (
+                                    
+                                    {reasoning.riskFactors && (
                                       <div>
                                         <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">
                                           Risk Factors:
                                         </div>
-                                        <div className="text-blue-700 dark:text-blue-300">
-                                          {backwardReasoning.riskFactors}
+                                        <div className="text-blue-700 dark:text-blue-300 text-xs">
+                                          {reasoning.riskFactors}
                                         </div>
                                       </div>
                                     )}
-                                  </div>
+                                    
+                                    {reasoning.dataSupport && (
+                                      <div>
+                                        <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">
+                                          Data Support:
+                                        </div>
+                                        <div className="text-blue-700 dark:text-blue-300 text-xs">
+                                          {reasoning.dataSupport}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </>
                                 ) : (
                                   <div className="text-blue-700 dark:text-blue-300 text-sm">
-                                    No backward reasoning available for this scenario.
+                                    No reasoning available for this scenario.
                                   </div>
                                 )}
-                                <div className="mt-4 flex items-center justify-center">
+                                
+                                <div className="mt-4 flex items-center justify-center pt-3 border-t border-blue-200 dark:border-blue-800">
                                   <div className="flex items-center gap-2 text-sm text-blue-600">
                                     <IoRefreshOutline className="w-4 h-4" />
                                     Click to see scenario
@@ -352,18 +503,18 @@ export function ReasoningPageClient({ organizations, currentOrganization, initia
                       )
                     })}
                   </div>
-                </div>
-              )}
+                </TabsContent>
 
-              {/* Recommendations */}
-              {result.recommendations && (
-                <div className="space-y-6">
-                  <h2 className="text-2xl font-light text-gray-900 dark:text-white flex items-center gap-3">
-                    <IoCheckmarkCircleOutline className="w-6 h-6" />
-                    Key Recommendations
-                  </h2>
-                  <Card className="border-0 shadow-sm bg-gray-50/50 dark:bg-gray-950/50">
-                    <CardContent className="p-6">
+                {/* Recommendations Tab */}
+                <TabsContent value="recommendations" className="space-y-6">
+                  <Card className="border-0 shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
+                        Strategic Recommendations
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
                       <div className="prose prose-gray dark:prose-invert max-w-none">
                         <pre className="whitespace-pre-wrap text-gray-700 dark:text-gray-300 leading-relaxed font-sans">
                           {result.recommendations}
@@ -371,20 +522,30 @@ export function ReasoningPageClient({ organizations, currentOrganization, initia
                       </div>
                     </CardContent>
                   </Card>
-                </div>
-              )}
+                  
+                  {result.dataDisclaimer && (
+                    <Card className="border-0 shadow-sm bg-amber-50 dark:bg-amber-900/20">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <IoShieldCheckmarkOutline className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <h4 className="font-medium text-amber-900 dark:text-amber-100 mb-1">
+                              Data Verification Notice
+                            </h4>
+                            <p className="text-sm text-amber-800 dark:text-amber-200">
+                              {result.dataDisclaimer}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </TabsContent>
+              </Tabs>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
-
-      {/* Floating Prompt Bar */}
-      <FloatingPromptBar
-        prompt={query}
-        onPromptChange={setQuery}
-        onSubmit={handleAnalyze}
-        isLoading={isAnalyzing}
-      />
 
       <style jsx global>{`
         .backface-hidden {
