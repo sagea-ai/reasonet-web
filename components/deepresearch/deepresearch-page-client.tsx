@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { SessionNavBar } from "@/components/ui/sidebar"
+import { useUser } from '@clerk/nextjs'
 import { 
   IoSearchOutline, 
   IoAnalyticsOutline, 
@@ -91,6 +92,7 @@ interface ReasoningProcess {
 }
 
 export function DeepResearchPageClient({ organizations, currentOrganization }: DeepResearchPageClientProps) {
+  const { user } = useUser()
   const [query, setQuery] = useState('')
   const [isResearching, setIsResearching] = useState(false)
   const [result, setResult] = useState<ResearchResult | null>(null)
@@ -99,6 +101,56 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
   const [showReasoning, setShowReasoning] = useState(false)
   const [lastReasoningStep, setLastReasoningStep] = useState<string>('')
   const [reasoningPhase, setReasoningPhase] = useState<'forward' | 'backward' | 'validation' | 'synthesis'>('forward')
+  const carouselRef = useRef<HTMLDivElement>(null)
+
+  const suggestionPrompts = [
+    "Digital payment adoption trends in Nepal's rural markets",
+    "Impact of cryptocurrency regulations on South Asian fintech",
+    "Mobile banking penetration in Nepali agricultural communities",
+    "Remittance flow patterns and digital transformation in Nepal",
+    "Microfinance digitization opportunities in emerging markets",
+    "Cross-border payment solutions for Nepal-India trade",
+    "Financial inclusion strategies for unbanked populations",
+    "Digital lending platforms in developing economies",
+    "Blockchain applications in Nepal's supply chain finance",
+    "InsurTech growth potential in South Asian markets",
+    "Central bank digital currency implications for Nepal",
+    "SME financing gaps in Nepal's digital economy",
+    "Financial literacy and digital adoption correlations",
+    "Climate finance opportunities in Himalayan regions",
+    "Trade finance digitization in landlocked economies"
+  ]
+
+  useEffect(() => {
+    const carousel = carouselRef.current
+    if (!carousel) return
+
+    const scrollWidth = carousel.scrollWidth
+    const clientWidth = carousel.clientWidth
+    
+    let animationId: number
+    let startTime: number
+
+    const animate = (currentTime: number) => {
+      if (!startTime) startTime = currentTime
+      
+      const elapsed = currentTime - startTime
+      const progress = (elapsed / 180000) % 1 
+      
+      const scrollPosition = progress * (scrollWidth - clientWidth)
+      carousel.scrollLeft = scrollPosition
+      
+      animationId = requestAnimationFrame(animate)
+    }
+
+    animationId = requestAnimationFrame(animate)
+
+    return () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId)
+      }
+    }
+  }, [])
 
   const handleResearch = async () => {
     if (!query.trim()) return
@@ -222,6 +274,25 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
     }
   }
 
+  const getGreeting = () => {
+    const hour = new Date().getHours()
+    const firstName = user?.firstName || 'there'
+    
+    if (hour >= 5 && hour < 10) {
+      return `Good morning, early bird ${firstName}!`
+    } else if (hour >= 10 && hour < 12) {
+      return `Hello there, ${firstName}!`
+    } else if (hour >= 12 && hour < 17) {
+      return `Good afternoon, ${firstName}!`
+    } else if (hour >= 17 && hour < 20) {
+      return `Evening vibes, ${firstName}!`
+    } else if (hour >= 20 && hour < 23) {
+      return `Hey night owl, ${firstName}!`
+    } else {
+      return `Burning the midnight oil, ${firstName}?`
+    }
+  }
+
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       <SessionNavBar 
@@ -235,16 +306,99 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
       <div className="max-w-6xl mx-auto px-8 py-16 pb-32">
         {/* Header */}
         <div className="text-center mb-16">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-900 rounded-2xl mb-8">
-            <IoSearchOutline className="w-8 h-8 text-gray-700 dark:text-gray-300" />
-          </div>
-          <h1 className="text-4xl font-light text-gray-900 dark:text-white mb-4 tracking-tight">
-            Deep Research
+          <h1 className="text-4xl font-bold text-gray-600 dark:text-gray-400 mb-2 tracking-tight">
+            {getGreeting()}
           </h1>
-          <p className="text-lg text-gray-500 dark:text-gray-400 font-light max-w-2xl mx-auto leading-relaxed">
-            Comprehensive analysis and probabilistic insights on any topic
-          </p>
         </div>
+
+        {!result && !isResearching && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center space-y-8 mb-16"
+          >
+            <div className="space-y-4">
+              <h2 className="text-2xl font-light text-gray-900 dark:text-white">
+                Ready to research?
+              </h2>
+              <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed">
+                Enter any topic for comprehensive analysis and insights
+              </p>
+            </div>
+
+            {/* Search Bar */}
+            <div className="max-w-2xl mx-auto">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleResearch()
+                    }
+                  }}
+                  placeholder="Enter research topic..."
+                  className="w-full px-6 py-4 text-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent shadow-sm"
+                />
+                <button
+                  onClick={handleResearch}
+                  disabled={!query.trim() || isResearching}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-sky-600 hover:text-sky-800 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+                >
+                  <IoSearchOutline className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Suggestion Pills Carousel */}
+            <div className="relative max-w-4xl mx-auto">
+              <div 
+                ref={carouselRef}
+                className="flex gap-3 overflow-x-hidden scrollbar-hide py-2"
+                style={{
+                  maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)',
+                  WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)'
+                }}
+              >
+                {[...suggestionPrompts, ...suggestionPrompts].map((prompt, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      setQuery(prompt)
+                      // Optional: automatically focus the search input after setting query
+                      const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement
+                      if (searchInput) {
+                        searchInput.focus()
+                      }
+                    }}
+                    className="flex-shrink-0 px-4 py-2 text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors whitespace-nowrap"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Recent Searches */}
+            {researchHistory.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Recent searches</h3>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {researchHistory.slice(0, 5).map((search, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setQuery(search)}
+                      className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      {search}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
 
         {/* User Query Display */}
         {reasoning && (
@@ -274,14 +428,14 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <div className="border-l-2 border-gray-200 dark:border-gray-700 pl-6">
-              <div className="flex items-center justify-between mb-4">
+            <div className="border-l border-gray-200 dark:border-gray-700 pl-6">
+              <div className="flex items-center justify-between mb-6">
                 <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   {isResearching ? 'Thinking...' : 'Reasoning'}
                 </h3>
                 <button
                   onClick={() => setShowReasoning(!showReasoning)}
-                  className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
                   {showReasoning ? (
                     <IoChevronUpOutline className="w-4 h-4" />
@@ -293,15 +447,15 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
 
               {/* Current step when processing */}
               {isResearching && lastReasoningStep && (
-                <div className="mb-4 pb-4 border-b border-gray-100 dark:border-gray-800">
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="mb-6 pb-6 border-b border-gray-100 dark:border-gray-800">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
                     {lastReasoningStep}
                   </p>
                 </div>
               )}
 
               {showReasoning && (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {/* All reasoning steps in chronological order */}
                   {[
                     ...reasoning.forwardReasoning,
@@ -310,52 +464,13 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
                   ]
                     .sort((a, b) => a.timestamp - b.timestamp)
                     .map((step, index) => (
-                      <div key={index} className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                      <div key={index} className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed font-light">
                         {step.step}
                       </div>
                     ))}
                 </div>
               )}
             </div>
-          </motion.div>
-        )}
-
-        {/* Empty State */}
-        {!result && !isResearching && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center space-y-8"
-          >
-            <div className="w-24 h-24 bg-gray-50 dark:bg-gray-950 rounded-3xl mx-auto flex items-center justify-center border border-gray-200 dark:border-gray-800">
-              <IoAnalyticsOutline className="w-12 h-12 text-gray-400" />
-            </div>
-            <div className="space-y-4">
-              <h2 className="text-2xl font-light text-gray-900 dark:text-white">
-                Ready to research
-              </h2>
-              <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed">
-                Enter any topic for comprehensive analysis and insights
-              </p>
-            </div>
-
-            {/* Recent Searches */}
-            {researchHistory.length > 0 && (
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Recent searches</h3>
-                <div className="flex flex-wrap gap-2 justify-center">
-                  {researchHistory.slice(0, 5).map((search, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setQuery(search)}
-                      className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      {search}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </motion.div>
         )}
 
@@ -583,13 +698,15 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
         </AnimatePresence>
       </div>
 
-      {/* Floating Search Bar */}
-      <DeepResearchSearchBar
-        query={query}
-        onQueryChange={setQuery}
-        onSubmit={handleResearch}
-        isLoading={isResearching}
-      />
+      {/* Floating Search Bar for when results are shown */}
+      {(result || isResearching) && (
+        <DeepResearchSearchBar
+          query={query}
+          onQueryChange={setQuery}
+          onSubmit={handleResearch}
+          isLoading={isResearching}
+        />
+      )}
     </div>
   )
 }
