@@ -74,8 +74,14 @@ export function SimulateCanvas() {
   }, [nodes, removeNode])
 
   const handleConfigClick = useCallback((nodeId: string, nodeData: any) => {
+    // Verify the node still exists before opening config
+    const nodeExists = nodes.find(node => node.id === nodeId)
+    if (!nodeExists) {
+      console.warn('Cannot configure node - node not found:', nodeId)
+      return
+    }
     setConfigNode({ id: nodeId, data: nodeData })
-  }, [])
+  }, [nodes])
 
   const getNodeDescription = (nodeType: string) => {
     const descriptions = {

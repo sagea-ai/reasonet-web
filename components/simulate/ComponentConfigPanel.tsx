@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { X, Save, FileText, Settings as SettingsIcon } from 'lucide-react'
 import { useSimulateStore } from '@/store/simulateStore'
 
@@ -11,34 +11,77 @@ interface ComponentConfigPanelProps {
 }
 
 export function ComponentConfigPanel({ nodeId, nodeData, onClose }: ComponentConfigPanelProps) {
-  const { updateNodeData } = useSimulateStore()
+  const { updateNodeData, nodes } = useSimulateStore()
   const [description, setDescription] = useState(nodeData.description || '')
   const [customConfig, setCustomConfig] = useState(nodeData.customConfig || '')
+  const [isValid, setIsValid] = useState(true)
+
+  // Validate that the node still exists when component mounts
+  useEffect(() => {
+    const nodeExists = nodes.find(node => node.id === nodeId)
+    if (!nodeExists) {
+      console.warn('Node no longer exists:', nodeId)
+      setIsValid(false)
+    }
+  }, [nodeId, nodes])
 
   const handleSave = () => {
-    updateNodeData(nodeId, {
-      description,
-      customConfig,
-    })
+    if (!isValid) {
+      console.error('Cannot save: node is invalid')
+      onClose()
+      return
+    }
+
+    console.log('Saving component configuration:', { nodeId, description, customConfig })
+    
+    const updateData = {
+      description: description.trim() || nodeData.description,
+      customConfig: customConfig.trim() || nodeData.customConfig,
+    }
+
+    updateNodeData(nodeId, updateData)
     onClose()
   }
 
-  const getComponentHelp = (nodeType: string) => {
-    const helpText = {
-      'form-trigger': 'Describe what form data this component receives and what triggers it (e.g., "User submits contact form with name, email, and message")',
-      'webhook': 'Explain what external system sends data here and what data it contains (e.g., "Stripe webhook sends payment confirmation with customer ID and amount")',
-      'ai-agent': 'Detail what AI processing happens here (e.g., "Analyze customer sentiment and extract key issues from support ticket")',
-      'condition': 'Specify the conditions being checked (e.g., "If customer is premium user and issue severity is high")',
-      'database': 'Describe what data is stored or retrieved (e.g., "Save customer support ticket to database with timestamp and priority")',
-      'notification': 'Explain what notification is sent and to whom (e.g., "Send email confirmation to customer with ticket number")',
-      'slack': 'Detail what message is posted to Slack (e.g., "Post urgent support alert to #customer-success channel")',
-    }
-    
-    return helpText[nodeType as keyof typeof helpText] || 'Describe what this custom component does in your workflow'
+  if (!isValid) {
+    return (
+      <div className="fixed inset-0 bg-black/20 backdrop-blur-2xl flex items-center justify-center z-50">
+        <div className="bg-card border border-border rounded-lg p-6 w-[600px] max-w-[90vw]">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-500 rounded text-white">
+                <X className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-foreground font-semibold text-lg">Component Not Found</h3>
+                <p className="text-muted-foreground text-sm">This component no longer exists</p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <p className="text-muted-foreground text-sm mb-4">
+            The component you were trying to configure has been removed or is no longer available.
+          </p>
+          <div className="flex justify-end">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-2xl flex items-center justify-center z-50">
       <div className="bg-card border border-border rounded-lg p-6 w-[600px] max-w-[90vw] max-h-[80vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -139,4 +182,18 @@ export function ComponentConfigPanel({ nodeId, nodeData, onClose }: ComponentCon
       </div>
     </div>
   )
+
+  function getComponentHelp(nodeType: string) {
+    const helpText = {
+      'form-trigger': 'Describe what form data this component receives and what triggers it (e.g., "User submits contact form with name, email, and message")',
+      'webhook': 'Explain what external system sends data here and what data it contains (e.g., "Stripe webhook sends payment confirmation with customer ID and amount")',
+      'ai-agent': 'Detail what AI processing happens here (e.g., "Analyze customer sentiment and extract key issues from support ticket")',
+      'condition': 'Specify the conditions being checked (e.g., "If customer is premium user and issue severity is high")',
+      'database': 'Describe what data is stored or retrieved (e.g., "Save customer support ticket to database with timestamp and priority")',
+      'notification': 'Explain what notification is sent and to whom (e.g., "Send email confirmation to customer with ticket number")',
+      'slack': 'Detail what message is posted to Slack (e.g., "Post urgent support alert to #customer-success channel")',
+    }
+    
+    return helpText[nodeType as keyof typeof helpText] || 'Describe what this custom component does in your workflow'
+  }
 }

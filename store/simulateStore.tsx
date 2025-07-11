@@ -165,30 +165,37 @@ export const useSimulateStore = create<SimulateState>((set, get) => ({
     if (!nodeExists) {
       console.error('Node not found:', nodeId)
       console.log('Available nodes:', currentState.nodes.map(n => ({ id: n.id, label: n.data.label })))
-      return
+      // Instead of returning early, we'll gracefully handle this
+      return false
     }
 
-    set((state) => {
-      const newNodes = state.nodes.map((node) => {
-        if (node.id === nodeId) {
-          const updatedNode = {
-            ...node,
-            data: {
-              ...node.data,
-              ...newData,
-            },
+    try {
+      set((state) => {
+        const newNodes = state.nodes.map((node) => {
+          if (node.id === nodeId) {
+            const updatedNode = {
+              ...node,
+              data: {
+                ...node.data,
+                ...newData,
+              },
+            }
+            console.log('Updated node:', updatedNode)
+            return updatedNode
           }
-          console.log('Updated node:', updatedNode)
-          return updatedNode
-        }
-        return node
+          return node
+        })
+        
+        console.log('New nodes after update:', newNodes.map(n => ({ id: n.id, label: n.data.label })))
+        return { nodes: newNodes }
       })
       
-      console.log('New nodes after update:', newNodes.map(n => ({ id: n.id, label: n.data.label })))
-      return { nodes: newNodes }
-    })
-    
-    get().saveToHistory()
+      get().saveToHistory()
+      return true
+    } catch (error) {
+      console.error('Error updating node data:', error)
+      return false
+    }
   },
 
   updateEdgeData: (edgeId, newData) => {
