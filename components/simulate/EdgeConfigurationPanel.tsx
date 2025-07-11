@@ -30,7 +30,7 @@ export function EdgeConfigPanel({ edgeId, edgeData, sourceNode, targetNode, onCl
       <div className="bg-card border border-border rounded-lg p-6 w-[500px] max-w-[90vw]">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-600 rounded text-white">
+            <div className="p-2 bg-sky-600 rounded text-white">
               <ArrowRight className="w-5 h-5" />
             </div>
             <div>

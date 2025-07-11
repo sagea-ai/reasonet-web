@@ -266,11 +266,11 @@ export function BillingPageClient({
             <Card className="border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm hover:shadow-md transition-shadow duration-200 p-2">
               <CardHeader className="pb-1">
                 <div className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-blue-600" />
+                  <Shield className="h-5 w-5 text-sky-600" />
                   <CardTitle className="text-base font-semibold text-gray-900 dark:text-white">
                     Enterprise
                   </CardTitle>
-                  <Badge variant="outline" className="ml-2 border-gray-200 dark:border-gray-700 text-xs text-blue-700 dark:text-blue-300 bg-white dark:bg-gray-950">
+                  <Badge variant="outline" className="ml-2 border-gray-200 dark:border-gray-700 text-xs text-sky-700 dark:text-sky-300 bg-white dark:bg-gray-950">
                     Best for Scale
                   </Badge>
                 </div>
@@ -285,11 +285,11 @@ export function BillingPageClient({
                     Everything in Pro, plus:
                   </li>
                   <li className="flex items-center gap-2 text-gray-700 dark:text-gray-300 text-sm">
-                    <Users className="h-4 w-4 text-blue-500" />
+                    <Users className="h-4 w-4 text-sky-500" />
                     Unlimited team members
                   </li>
                   <li className="flex items-center gap-2 text-gray-700 dark:text-gray-300 text-sm">
-                    <Shield className="h-4 w-4 text-blue-500" />
+                    <Shield className="h-4 w-4 text-sky-500" />
                     SSO, audit logs, custom integrations
                   </li>
                   <li className="flex items-center gap-2 text-gray-700 dark:text-gray-300 text-sm">
@@ -303,7 +303,7 @@ export function BillingPageClient({
                 </ul>
                 <Button 
                   variant="outline" 
-                  className="w-full border-gray-200 dark:border-gray-700 text-blue-700 dark:text-blue-300 font-semibold py-2 rounded-lg transition-all duration-150 text-sm"
+                  className="w-full border-gray-200 dark:border-gray-700 text-sky-700 dark:text-sky-300 font-semibold py-2 rounded-lg transition-all duration-150 text-sm"
                   asChild
                 >
                   <a href="mailto:enterprise@sagea.space">
@@ -451,7 +451,7 @@ export function BillingPageClient({
                                     : run.status === "FAILED"
                                     ? "text-red-600"
                                     : run.status === "PROCESSING"
-                                    ? "text-blue-600"
+                                    ? "text-sky-600"
                                     : "text-yellow-600"
                                 }>
                                   {run.status}

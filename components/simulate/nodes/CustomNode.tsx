@@ -30,7 +30,7 @@ const iconMap = {
 const colorMap = {
   'form-trigger': 'bg-orange-500',
   'webhook': 'bg-purple-500',
-  'ai-agent': 'bg-blue-500',
+  'ai-agent': 'bg-sky-500',
   'condition': 'bg-yellow-500',
   'database': 'bg-green-500',
   'notification': 'bg-red-500',
@@ -89,7 +89,7 @@ export function CustomNode({ data, id, selected, onConfigClick }: CustomNodeProp
 
       <button
         onClick={handleConfigClick}
-        className={`absolute -top-2 -right-10 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-blue-600 transition-all ${
+        className={`absolute -top-2 -right-10 w-6 h-6 bg-sky-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-sky-600 transition-all ${
           selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
         }`}
         style={{ zIndex: 10 }}

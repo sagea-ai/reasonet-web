@@ -123,7 +123,7 @@ export function RepositoriesLayout({
 
   const getLanguageColor = (language?: string) => {
     const colors: Record<string, string> = {
-      'TypeScript': 'bg-blue-100 text-blue-800',
+      'TypeScript': 'bg-sky-100 text-sky-800',
       'JavaScript': 'bg-yellow-100 text-yellow-800',
       'Python': 'bg-sky-100 text-sky-800',
       'Dockerfile': 'bg-sky-100 text-sky-800',
