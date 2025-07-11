@@ -45,7 +45,7 @@ export function ComponentConfigPanel({ nodeId, nodeData, onClose }: ComponentCon
 
   if (!isValid) {
     return (
-      <div className="fixed inset-0 bg-black/20 backdrop-blur-2xl flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-black/10 backdrop-blur-2xl flex items-center justify-center z-50">
         <div className="bg-card border border-border rounded-lg p-6 w-[600px] max-w-[90vw]">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">

@@ -95,7 +95,7 @@ export function FloatingPromptBar({
 
   return (
     <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-40 w-full max-w-4xl px-6">
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-xl overflow-hidden">
+      <div className="bg-neutral-100/60 backdrop-blur-2xl dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-xl overflow-hidden">
         {/* Loading indicator */}
         {isLoading && (
           <div className="h-1 bg-sky-500 animate-pulse"></div>
@@ -130,7 +130,7 @@ export function FloatingPromptBar({
               onChange={(e) => handleInputChange(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Tell me about the workflow you want to create, or I can generate one from your diagram..."
-              className={`w-full p-4 bg-white dark:bg-gray-800 rounded-2xl text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 resize-none min-h-[70px] max-h-[200px] focus:outline-none  ${
+              className={`w-full p-4 bg-transparent dark:bg-gray-800 rounded-2xl text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 resize-none min-h-[70px] max-h-[200px] focus:outline-none  ${
                 isLoading ? 'opacity-60' : ''
               }`}
               disabled={isTyping || isLoading}

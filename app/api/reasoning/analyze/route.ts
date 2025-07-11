@@ -21,16 +21,7 @@ export async function POST(request: NextRequest) {
 
     const systemPrompt = `You are an expert strategic reasoning AI that maps out the downstream consequences of decisions across law, policy, and product domains for startup founders and VCs.
 
-Your task is to analyze the given strategic decision and provide a structured thought process followed by the analysis.
-
-First, show your thinking process step by step using these markers:
-- <thinking>Your step-by-step reasoning</thinking>
-- <stakeholder_analysis>How you identify key stakeholders</stakeholder_analysis>
-- <outcome_modeling>How you model potential outcomes</outcome_modeling>
-- <causal_reasoning>How you build causal chains</causal_reasoning>
-- <risk_assessment>How you assess risks</risk_assessment>
-
-Then provide the final analysis as a JSON object with this structure:
+Analyze the given strategic decision and provide a JSON response with this exact structure:
 {
   "stakeholders": [
     {
@@ -43,7 +34,7 @@ Then provide the final analysis as a JSON object with this structure:
     {
       "id": "unique_id",
       "title": "Outcome title",
-      "probability": 0-100,
+      "probability": 75,
       "impact": "positive|negative|neutral",
       "description": "Detailed description",
       "timeline": "Timeline estimate",
@@ -58,7 +49,7 @@ Then provide the final analysis as a JSON object with this structure:
           "step": 1,
           "event": "What happens",
           "reasoning": "Why this happens",
-          "confidence": 0-100
+          "confidence": 85
         }
       ]
     }
@@ -66,54 +57,48 @@ Then provide the final analysis as a JSON object with this structure:
   "riskMatrix": [
     {
       "category": "Risk category",
-      "probability": 0-100,
-      "impact": 1-10,
+      "probability": 60,
+      "impact": 7,
       "mitigation": "How to mitigate"
     }
   ],
   "reasoning": "Explanation of your thought process and methodology",
-  "confidence": 0-100
+  "confidence": 80
 }
 
-Focus on business implications, regulatory considerations, market dynamics, and competitive responses. Be concise and actionable.`
+Focus on business implications, regulatory considerations, market dynamics, and competitive responses. Be concise and actionable. Return only valid JSON.`
 
-    const encoder = new TextEncoder()
-    const stream = new ReadableStream({
-      async start(controller) {
-        try {
-          const completion = await openai.chat.completions.create({
-            model: 'gpt-4o',
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: query }
-            ],
-            temperature: 0.7,
-            max_tokens: 4000,
-            stream: true,
-          })
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: query }
+      ],
+      temperature: 0.7,
+      max_tokens: 4000,
+    })
 
-          for await (const chunk of completion) {
-            const content = chunk.choices[0]?.delta?.content || ''
-            if (content) {
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`))
-            }
-          }
+    const content = completion.choices[0]?.message?.content
+    if (!content) {
+      throw new Error('No content received from AI')
+    }
 
-          controller.enqueue(encoder.encode('data: [DONE]\n\n'))
-          controller.close()
-        } catch (error) {
-          controller.error(error)
-        }
+    // Try to parse the JSON response
+    try {
+      const jsonMatch = content.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        const analysisData = JSON.parse(jsonMatch[0])
+        return NextResponse.json(analysisData)
+      } else {
+        throw new Error('No JSON found in response')
       }
-    })
-
-    return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
-    })
+    } catch (parseError) {
+      console.error('Failed to parse AI response:', parseError)
+      return NextResponse.json(
+        { error: 'Failed to parse AI response' },
+        { status: 500 }
+      )
+    }
   } catch (error) {
     console.error('Reasoning analysis error:', error)
     return NextResponse.json(

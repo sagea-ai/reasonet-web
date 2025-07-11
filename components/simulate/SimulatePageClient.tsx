@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { ReactFlowProvider } from '@xyflow/react'
 import { SimulateCanvas } from '@/components/simulate/SimulateCanvas'
 import { ComponentPalette } from '@/components/simulate/ComponentPalette'
@@ -10,6 +11,7 @@ import { TrialBannerWrapper } from "../trial/trial-banner-wrapper"
 
 
 export function SimulatePageClient() {
+  const router = useRouter()
   const [currentPrompt, setCurrentPrompt] = useState('')
   const [isAnimating, setIsAnimating] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -21,17 +23,11 @@ export function SimulatePageClient() {
     setTimeout(() => setIsAnimating(false), prompt.length * 20 + 500)
   }
 
-  const handlePromptSubmit = async (prompt: string) => {
+  const handlePromptSubmit = (prompt: string) => {
     console.log('Submitting prompt:', prompt)
-    setIsLoading(true)
-    
-    try {
-      // TODO: Implement actual prompt submission logic
-      // This could send to an AI service, save to database, etc.
-      await new Promise(resolve => setTimeout(resolve, 3000)) // Simulate API call
-    } finally {
-      setIsLoading(false)
-    }
+    // Redirect to reason page with the prompt
+    const encodedPrompt = encodeURIComponent(prompt)
+    router.push(`/reason?prompt=${encodedPrompt}`)
   }
 
   return (
