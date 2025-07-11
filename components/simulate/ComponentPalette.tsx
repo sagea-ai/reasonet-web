@@ -113,7 +113,7 @@ export function ComponentPalette() {
   }
 
   return (
-    <div className="w-72 bg-card border-r border-border p-3 overflow-y-auto">
+    <div className="w-72 bg-card border-l border-border p-3 overflow-y-auto">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-foreground text-sm font-semibold">Components</h2>
         <button
