@@ -76,10 +76,9 @@ const variants = {
 };
 
 const transitionProps = {
-  type: "tween",
+  type: "tween" as const,
   ease: "easeOut",
   duration: 0.2,
-  staggerChildren: 0.1,
 };
 
 const staggerVariants = {
@@ -128,7 +127,6 @@ export function SessionNavBar({
       initial={isCollapsed ? "closed" : "open"}
       animate={isCollapsed ? "closed" : "open"}
       variants={sidebarVariants}
-      transition={transitionProps}
       onMouseEnter={() => setIsCollapsed(false)}
       onMouseLeave={() => setIsCollapsed(true)}
     >
