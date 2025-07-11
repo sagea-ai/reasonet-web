@@ -139,12 +139,12 @@ export function ComponentConfigPanel({ nodeId, nodeData, onClose }: ComponentCon
           </div>
 
           {/* Example Section */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="font-medium text-blue-900 mb-2 flex items-center gap-2">
+          <div className="bg-sky-50 border border-sky-200 rounded-lg p-4">
+            <h4 className="font-medium text-sky-900 mb-2 flex items-center gap-2">
               <FileText className="w-4 h-4" />
               Example Description
             </h4>
-            <p className="text-sm text-blue-800">
+            <p className="text-sm text-sky-800">
               {nodeData.nodeType === 'form-trigger' && 
                 '"This component receives data when a user submits our contact form. It captures name, email, subject, and message fields. This triggers our customer support workflow."'
               }

@@ -253,21 +253,17 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <Card className="border-0 shadow-sm bg-blue-50/50 dark:bg-blue-950/20">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shrink-0">
-                    <span className="text-white text-sm font-medium">Q</span>
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-gray-900 dark:text-white mb-2">Research Query</h3>
-                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                      {reasoning.userPrompt}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="flex items-start gap-4">
+              <div className="w-8 h-8 bg-sky-500 rounded-full flex items-center justify-center shrink-0">
+                <span className="text-white text-sm font-medium">Q</span>
+              </div>
+              <div>
+                <h3 className="font-medium text-gray-900 dark:text-white mb-2">Research Query</h3>
+                <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                  {reasoning.userPrompt}
+                </p>
+              </div>
+            </div>
           </motion.div>
         )}
 
@@ -278,149 +274,49 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <Card className="border-0 shadow-sm bg-purple-50/50 dark:bg-purple-950/20">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-                      <IoFlashOutline className="w-4 h-4 text-white" />
-                    </div>
-                    <h3 className="font-medium text-gray-900 dark:text-white">
-                      {isResearching ? 'SAGE is thinking...' : 'Reasoning Process'}
-                    </h3>
-                  </div>
-                  <button
-                    onClick={() => setShowReasoning(!showReasoning)}
-                    className="flex items-center gap-2 text-sm text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300"
-                  >
-                    {showReasoning ? (
-                      <>Hide reasoning <IoChevronUpOutline className="w-4 h-4" /></>
-                    ) : (
-                      <>Show reasoning <IoChevronDownOutline className="w-4 h-4" /></>
-                    )}
-                  </button>
-                </div>
-
-                {/* Current thinking step */}
-                {isResearching && lastReasoningStep && (
-                  <div className="mb-4 p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-                      <span className="text-xs font-medium text-purple-600 dark:text-purple-400 uppercase tracking-wide">
-                        {getPhaseLabel(reasoningPhase)}
-                      </span>
-                    </div>
-                    <p className="text-gray-700 dark:text-gray-300 text-sm">
-                      {lastReasoningStep}
-                    </p>
-                  </div>
-                )}
-
-                <AnimatePresence>
-                  {showReasoning && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="space-y-6"
-                    >
-                      {/* Forward Reasoning */}
-                      {reasoning.forwardReasoning.length > 0 && (
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                            Forward Reasoning
-                          </h4>
-                          <div className="space-y-2">
-                            {reasoning.forwardReasoning.map((step, index) => (
-                              <motion.div
-                                key={index}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: index * 0.1 }}
-                                className="flex items-start gap-3 p-3 bg-white/30 dark:bg-gray-800/30 rounded-lg"
-                              >
-                                <span className="text-xs text-gray-500 mt-1 w-8">{index + 1}.</span>
-                                <p className="text-sm text-gray-700 dark:text-gray-300 flex-1">
-                                  {step.step}
-                                </p>
-                                {step.confidence > 0 && (
-                                  <Badge variant="outline" className="text-xs">
-                                    {step.confidence}%
-                                  </Badge>
-                                )}
-                              </motion.div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Backward Reasoning */}
-                      {reasoning.backwardReasoning.length > 0 && (
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                            <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-                            Backward Reasoning
-                          </h4>
-                          <div className="space-y-2">
-                            {reasoning.backwardReasoning.map((step, index) => (
-                              <motion.div
-                                key={index}
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: index * 0.1 }}
-                                className="flex items-start gap-3 p-3 bg-white/30 dark:bg-gray-800/30 rounded-lg"
-                              >
-                                <span className="text-xs text-gray-500 mt-1 w-8">{index + 1}.</span>
-                                <p className="text-sm text-gray-700 dark:text-gray-300 flex-1">
-                                  {step.step}
-                                </p>
-                                {step.confidence > 0 && (
-                                  <Badge variant="outline" className="text-xs">
-                                    {step.confidence}%
-                                  </Badge>
-                                )}
-                              </motion.div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Validation */}
-                      {reasoning.validation.length > 0 && (
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                            <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                            Validation
-                          </h4>
-                          <div className="space-y-2">
-                            {reasoning.validation.map((step, index) => (
-                              <motion.div
-                                key={index}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.1 }}
-                                className="flex items-start gap-3 p-3 bg-white/30 dark:bg-gray-800/30 rounded-lg"
-                              >
-                                <span className="text-xs text-gray-500 mt-1 w-8">{index + 1}.</span>
-                                <p className="text-sm text-gray-700 dark:text-gray-300 flex-1">
-                                  {step.step}
-                                </p>
-                                {step.confidence > 0 && (
-                                  <Badge variant="outline" className="text-xs">
-                                    {step.confidence}%
-                                  </Badge>
-                                )}
-                              </motion.div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </motion.div>
+            <div className="border-l-2 border-gray-200 dark:border-gray-700 pl-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {isResearching ? 'Thinking...' : 'Reasoning'}
+                </h3>
+                <button
+                  onClick={() => setShowReasoning(!showReasoning)}
+                  className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                >
+                  {showReasoning ? (
+                    <IoChevronUpOutline className="w-4 h-4" />
+                  ) : (
+                    <IoChevronDownOutline className="w-4 h-4" />
                   )}
-                </AnimatePresence>
-              </CardContent>
-            </Card>
+                </button>
+              </div>
+
+              {/* Current step when processing */}
+              {isResearching && lastReasoningStep && (
+                <div className="mb-4 pb-4 border-b border-gray-100 dark:border-gray-800">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {lastReasoningStep}
+                  </p>
+                </div>
+              )}
+
+              {showReasoning && (
+                <div className="space-y-3">
+                  {/* All reasoning steps in chronological order */}
+                  {[
+                    ...reasoning.forwardReasoning,
+                    ...reasoning.backwardReasoning,
+                    ...reasoning.validation
+                  ]
+                    .sort((a, b) => a.timestamp - b.timestamp)
+                    .map((step, index) => (
+                      <div key={index} className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                        {step.step}
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
           </motion.div>
         )}
 
@@ -470,8 +366,8 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
             animate={{ opacity: 1 }}
             className="text-center space-y-8"
           >
-            <div className="w-24 h-24 bg-blue-50 dark:bg-blue-950/30 rounded-3xl mx-auto flex items-center justify-center border border-blue-200 dark:border-blue-800">
-              <IoSearchOutline className="w-12 h-12 text-blue-600 animate-pulse" />
+            <div className="w-24 h-24 bg-sky-50 dark:bg-sky-950/30 rounded-3xl mx-auto flex items-center justify-center border border-sky-200 dark:border-sky-800">
+              <IoSearchOutline className="w-12 h-12 text-sky-600 animate-pulse" />
             </div>
             <div className="space-y-4">
               <h2 className="text-2xl font-light text-gray-900 dark:text-white">
@@ -638,7 +534,7 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
                               href={source.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-xs text-blue-600 hover:text-blue-800 break-all"
+                              className="text-xs text-sky-600 hover:text-sky-800 break-all"
                             >
                               {source.url}
                             </a>
@@ -668,8 +564,8 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
                     <Card key={index} className="border-0 shadow-sm bg-gray-50/50 dark:bg-gray-950/50">
                       <CardContent className="p-4">
                         <div className="flex items-start gap-3">
-                          <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                            <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                          <div className="w-6 h-6 bg-sky-100 dark:bg-sky-900/30 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                            <span className="text-xs font-medium text-sky-600 dark:text-sky-400">
                               {index + 1}
                             </span>
                           </div>

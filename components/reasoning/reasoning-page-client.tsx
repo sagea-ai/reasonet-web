@@ -247,8 +247,8 @@ export function ReasoningPageClient({ organizations, currentOrganization, initia
             animate={{ opacity: 1 }}
             className="text-center space-y-8"
           >
-            <div className="w-24 h-24 bg-blue-50 dark:bg-blue-950/30 rounded-3xl mx-auto flex items-center justify-center border border-blue-200 dark:border-blue-800">
-              <IoFlashOutline className="w-12 h-12 text-blue-600 animate-pulse" />
+            <div className="w-24 h-24 bg-sky-50 dark:bg-sky-950/30 rounded-3xl mx-auto flex items-center justify-center border border-sky-200 dark:border-sky-800">
+              <IoFlashOutline className="w-12 h-12 text-sky-600 animate-pulse" />
             </div>
             <div className="space-y-4">
               <h2 className="text-2xl font-light text-gray-900 dark:text-white">
