@@ -144,7 +144,7 @@ export function SimulateCanvas() {
   }
 
   return (
-    <div className="flex-1 bg-background relative" ref={reactFlowWrapper}>
+    <div className="flex-1 bg-background relative pb-32" ref={reactFlowWrapper}>
       <ReactFlow
         nodes={nodes}
         edges={edges}

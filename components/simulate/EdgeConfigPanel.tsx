@@ -16,8 +16,24 @@ export function EdgeConfigPanel({ edgeId, edgeData, sourceNode, targetNode, onCl
   const { updateEdgeData, edges } = useSimulateStore()
   const [stepNumber, setStepNumber] = useState(edgeData?.stepNumber?.toString() || '')
   const [description, setDescription] = useState(edgeData?.description || '')
+  const [isValid, setIsValid] = useState(true)
+
+  // Validate that the edge still exists when component mounts
+  useEffect(() => {
+    const edgeExists = edges.find(edge => edge.id === edgeId)
+    if (!edgeExists) {
+      console.warn('Edge no longer exists:', edgeId)
+      setIsValid(false)
+    }
+  }, [edgeId, edges])
 
   const handleSave = () => {
+    if (!isValid) {
+      console.error('Cannot save: edge is invalid')
+      onClose()
+      return
+    }
+
     console.log('Saving edge configuration:', { edgeId, stepNumber, description })
     
     const updateData = {
@@ -29,6 +45,44 @@ export function EdgeConfigPanel({ edgeId, edgeData, sourceNode, targetNode, onCl
 
     updateEdgeData(edgeId, updateData)
     onClose()
+  }
+
+  // If edge is invalid, show error state
+  if (!isValid) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-card border border-border rounded-lg p-6 w-[500px] max-w-[90vw]">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-500 rounded text-white">
+                <X className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-foreground font-semibold text-lg">Connection Not Found</h3>
+                <p className="text-muted-foreground text-sm">This connection no longer exists</p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <p className="text-muted-foreground text-sm mb-4">
+            The connection you were trying to configure has been removed or is no longer available.
+          </p>
+          <div className="flex justify-end">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

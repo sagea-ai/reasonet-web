@@ -4,14 +4,17 @@ import React from 'react'
 import { Save, Download, Upload, Play, Trash2, Undo, Redo, FileText } from 'lucide-react'
 import { useSimulateStore } from '@/store/simulateStore'
 
-export function SimulateToolbar() {
+interface SimulateToolbarProps {
+  onGeneratePrompt?: (prompt: string) => void
+}
+
+export function SimulateToolbar({ onGeneratePrompt }: SimulateToolbarProps) {
   const { clearCanvas, canUndo, canRedo, undo, redo, generateWorkflowPrompt } = useSimulateStore()
 
   const handleGeneratePrompt = () => {
     const prompt = generateWorkflowPrompt()
     console.log('Generated Prompt:', prompt)
-    navigator.clipboard.writeText(prompt)
-    alert('Workflow prompt copied to clipboard!')
+    onGeneratePrompt?.(prompt)
   }
 
   return (

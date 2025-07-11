@@ -203,7 +203,7 @@ export const useSimulateStore = create<SimulateState>((set, get) => ({
     
     if (!edgeId || typeof edgeId !== 'string') {
       console.error('Invalid edgeId:', edgeId)
-      return
+      return false
     }
     
     const currentState = get()
@@ -224,37 +224,49 @@ export const useSimulateStore = create<SimulateState>((set, get) => ({
           data: newData,
         }
         
-        set((state) => {
-          const newEdges = [...state.edges, recreatedEdge]
-          console.log('Recreated edge:', recreatedEdge)
-          return { edges: newEdges }
-        })
-        get().saveToHistory()
+        try {
+          set((state) => {
+            const newEdges = [...state.edges, recreatedEdge]
+            console.log('Recreated edge:', recreatedEdge)
+            return { edges: newEdges }
+          })
+          get().saveToHistory()
+          return true
+        } catch (error) {
+          console.error('Error recreating edge:', error)
+          return false
+        }
       }
-      return
+      return false
     }
 
-    set((state) => {
-      const newEdges = state.edges.map((edge) => {
-        if (edge.id === edgeId) {
-          const updatedEdge = {
-            ...edge,
-            data: {
-              ...edge.data,
-              ...newData,
-            },
+    try {
+      set((state) => {
+        const newEdges = state.edges.map((edge) => {
+          if (edge.id === edgeId) {
+            const updatedEdge = {
+              ...edge,
+              data: {
+                ...edge.data,
+                ...newData,
+              },
+            }
+            console.log('Updated edge:', updatedEdge)
+            return updatedEdge
           }
-          console.log('Updated edge:', updatedEdge)
-          return updatedEdge
-        }
-        return edge
+          return edge
+        })
+        
+        console.log('New edges after update:', newEdges.map(e => ({ id: e.id, source: e.source, target: e.target })))
+        return { edges: newEdges }
       })
       
-      console.log('New edges after update:', newEdges.map(e => ({ id: e.id, source: e.source, target: e.target })))
-      return { edges: newEdges }
-    })
-    
-    get().saveToHistory()
+      get().saveToHistory()
+      return true
+    } catch (error) {
+      console.error('Error updating edge data:', error)
+      return false
+    }
   },
 
   clearCanvas: () => {
