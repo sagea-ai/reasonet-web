@@ -97,7 +97,8 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
   const [researchHistory, setResearchHistory] = useState<string[]>([])
   const [reasoning, setReasoning] = useState<ReasoningProcess | null>(null)
   const [showReasoning, setShowReasoning] = useState(false)
-  const [currentReasoningStep, setCurrentReasoningStep] = useState<string>('')
+  const [lastReasoningStep, setLastReasoningStep] = useState<string>('')
+  const [reasoningPhase, setReasoningPhase] = useState<'forward' | 'backward' | 'validation' | 'synthesis'>('forward')
 
   const handleResearch = async () => {
     if (!query.trim()) return
@@ -110,7 +111,8 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
       backwardReasoning: [],
       validation: []
     })
-    setCurrentReasoningStep('Initializing research process...')
+    setLastReasoningStep('Initializing research process...')
+    setReasoningPhase('forward')
 
     try {
       const response = await fetch('/api/deepresearch/analyze', {
@@ -144,7 +146,8 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
                 const data = JSON.parse(line.slice(6))
                 
                 if (data.type === 'reasoning') {
-                  setCurrentReasoningStep(data.step)
+                  setLastReasoningStep(data.step)
+                  setReasoningPhase(data.reasoningType)
                   setReasoning(prev => {
                     if (!prev) return prev
                     const newStep: ReasoningStep = {
@@ -166,7 +169,7 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
                   })
                 } else if (data.type === 'result') {
                   setResult(data.result)
-                  setCurrentReasoningStep('')
+                  setLastReasoningStep('')
                 }
               } catch (e) {
                 console.error('Failed to parse SSE data:', e)
@@ -183,6 +186,16 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
       toast.error('Failed to perform research. Please try again.')
     } finally {
       setIsResearching(false)
+    }
+  }
+
+  const getPhaseLabel = (phase: string) => {
+    switch (phase) {
+      case 'forward': return 'Analyzing forward reasoning'
+      case 'backward': return 'Validating backward reasoning'
+      case 'validation': return 'Performing validation checks'
+      case 'synthesis': return 'Synthesizing findings'
+      default: return 'Processing'
     }
   }
 
@@ -289,14 +302,17 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
                 </div>
 
                 {/* Current thinking step */}
-                {isResearching && currentReasoningStep && (
+                {isResearching && lastReasoningStep && (
                   <div className="mb-4 p-4 bg-white/50 dark:bg-gray-800/50 rounded-xl">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 mb-2">
                       <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-                      <p className="text-gray-700 dark:text-gray-300 text-sm">
-                        {currentReasoningStep}
-                      </p>
+                      <span className="text-xs font-medium text-purple-600 dark:text-purple-400 uppercase tracking-wide">
+                        {getPhaseLabel(reasoningPhase)}
+                      </span>
                     </div>
+                    <p className="text-gray-700 dark:text-gray-300 text-sm">
+                      {lastReasoningStep}
+                    </p>
                   </div>
                 )}
 
