@@ -13,7 +13,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Reasonet Platform',
-  description: 'The brain layer for VCS and Startup founders',
+  description: 'Automated bug detection and fixing for your codebase',
 }
 
 export default function RootLayout({
