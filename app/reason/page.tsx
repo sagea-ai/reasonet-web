@@ -51,6 +51,7 @@ export default async function ReasonPage({ searchParams }: ReasonPageProps) {
       organizations={organizations}
       currentOrganization={currentOrganization}
       initialPrompt={resolvedSearchParams.prompt}
+      autoAnalyze={true}
     />
   );
 }

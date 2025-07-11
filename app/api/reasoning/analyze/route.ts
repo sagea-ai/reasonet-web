@@ -19,54 +19,54 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 })
     }
 
-    const systemPrompt = `You are an expert strategic reasoning AI that maps out the downstream consequences of decisions across law, policy, and product domains for startup founders and VCs.
+    const systemPrompt = `You are an expert business strategist and scenario planner with access to real market data and industry insights. You must analyze business ideas/workflows with factual precision and verifiable information.
 
-Analyze the given strategic decision and provide a JSON response with this exact structure:
+CRITICAL REQUIREMENTS:
+- Base ALL analysis on real market data, industry statistics, and verifiable facts
+- Cite specific data points, percentages, market sizes, and timeframes where possible
+- Reference actual industry trends, competitor performance, and market conditions
+- Provide scenarios that can be fact-checked and verified by human analysts
+- Avoid generic statements - be specific about numbers, dates, and sources when possible
+- Ground predictions in actual market evidence and historical patterns
+
+Analyze the given business idea/workflow and provide a JSON response with this exact structure:
+
 {
-  "stakeholders": [
+  "businessSummary": "Brief overview with specific market context and relevant industry data",
+  "scenarios": [
     {
-      "name": "Stakeholder name",
-      "impact": "high|medium|low",
-      "type": "individual|organization|government|market"
-    }
-  ],
-  "outcomes": [
-    {
-      "id": "unique_id",
-      "title": "Outcome title",
+      "title": "Specific scenario title based on real market conditions",
+      "type": "Growth/Challenge/Opportunity/Risk",
       "probability": 75,
-      "impact": "positive|negative|neutral",
-      "description": "Detailed description",
-      "timeline": "Timeline estimate",
-      "stakeholders": ["affected stakeholder names"]
+      "timeframe": "Short-term/Medium-term/Long-term",
+      "description": "Detailed explanation backed by real market data, industry statistics, and verifiable trends",
+      "marketData": "Specific statistics, market size, growth rates, or industry benchmarks supporting this scenario",
+      "verifiableFactors": "Concrete data points that can be fact-checked (e.g., market reports, industry surveys, regulatory changes)"
     }
   ],
-  "causalChains": [
+  "backwardReasoning": [
     {
-      "id": "chain_id",
-      "sequence": [
-        {
-          "step": 1,
-          "event": "What happens",
-          "reasoning": "Why this happens",
-          "confidence": 85
-        }
-      ]
+      "finalOutcome": "Specific measurable outcome with quantifiable metrics",
+      "requiredConditions": "Conditions backed by industry data and market realities",
+      "causalChain": "Step-by-step reasoning with specific data points and market evidence",
+      "criticalAssumptions": "Assumptions that can be validated against real market data",
+      "riskFactors": "Specific risks backed by industry failure rates, market volatility data, or regulatory precedents",
+      "dataSupport": "Key statistics, market research, or industry reports that support this reasoning"
     }
   ],
-  "riskMatrix": [
-    {
-      "category": "Risk category",
-      "probability": 60,
-      "impact": 7,
-      "mitigation": "How to mitigate"
-    }
-  ],
-  "reasoning": "Explanation of your thought process and methodology",
-  "confidence": 80
+  "recommendations": "Actionable recommendations based on proven market strategies and real industry success cases",
+  "dataDisclaimer": "Note: This analysis is based on available market data and industry trends as of the analysis date. All statistics and projections should be verified with current market research and industry reports."
 }
 
-Focus on business implications, regulatory considerations, market dynamics, and competitive responses. Be concise and actionable. Return only valid JSON.`
+IMPORTANT GUIDELINES:
+- Use specific percentages, dollar amounts, market sizes, and timeframes when available
+- Reference real industry benchmarks and competitor performance
+- Ground scenarios in actual market conditions and regulatory environments
+- Ensure all claims can be researched and verified by human analysts
+- Include market data sources context where relevant (e.g., "based on industry reports", "according to market research")
+- Avoid speculation without factual basis
+
+Generate exactly 3 scenarios with their corresponding backward reasoning. Be specific, factual, and ensure all analysis can be verified through market research. Return only valid JSON.`
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
@@ -74,7 +74,7 @@ Focus on business implications, regulatory considerations, market dynamics, and 
         { role: 'system', content: systemPrompt },
         { role: 'user', content: query }
       ],
-      temperature: 0.7,
+      temperature: 0.3, // Reduced temperature for more factual, less creative responses
       max_tokens: 4000,
     })
 
@@ -83,13 +83,17 @@ Focus on business implications, regulatory considerations, market dynamics, and 
       throw new Error('No content received from AI')
     }
 
-    // Try to parse the JSON response
+    console.log('Raw AI response:', content)
+
     try {
+      // Try to parse the JSON response
       const jsonMatch = content.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
         const analysisData = JSON.parse(jsonMatch[0])
+        console.log('Parsed analysis data:', JSON.stringify(analysisData, null, 2))
         return NextResponse.json(analysisData)
       } else {
+        console.log('No JSON found in response')
         throw new Error('No JSON found in response')
       }
     } catch (parseError) {
@@ -99,6 +103,7 @@ Focus on business implications, regulatory considerations, market dynamics, and 
         { status: 500 }
       )
     }
+
   } catch (error) {
     console.error('Reasoning analysis error:', error)
     return NextResponse.json(
