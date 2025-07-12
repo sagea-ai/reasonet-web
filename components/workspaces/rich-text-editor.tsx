@@ -223,7 +223,10 @@ export function RichTextEditor({
 
   return (
     <div className={cn('relative', getIndentClass(), className)}>
-      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+      <div className={cn(
+        "border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden",
+        className?.includes('border-blue') && "border-blue-200 dark:border-blue-700"
+      )}>
         {/* Toolbar */}
         <div className="bg-gray-50 dark:bg-gray-800 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
@@ -272,7 +275,7 @@ export function RichTextEditor({
           contentEditable
           onInput={handleInput}
           onKeyDown={handleKeyDown}
-          className="min-h-[100px] p-3 focus:outline-none"
+          className="min-h-[80px] p-3 focus:outline-none"
           data-placeholder={placeholder}
           style={{
             whiteSpace: 'pre-wrap'
@@ -293,7 +296,7 @@ export function RichTextEditor({
               ) : (
                 <Send className="h-3 w-3 mr-2" />
               )}
-              Post
+              Send
             </Button>
           </div>
         </div>

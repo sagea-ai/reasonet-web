@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Textarea } from '@/components/ui/textarea'
 import { InviteWorkspaceMemberDialog } from './invite-workspace-member-dialog'
 import { WorkspaceActivityFeed } from './workspace-activity-feed'
+import { RichTextEditor } from './rich-text-editor'
 import { toast } from 'sonner'
 import { formatDistanceToNow } from 'date-fns'
 import { 
@@ -205,16 +205,18 @@ export function WorkspaceContent({ workspace }: WorkspaceContentProps) {
     setPingMessage('')
   }
 
-  const handlePingSubmit = async (scenarioId: string, scenarioTitle: string) => {
-    if (!pingMessage.trim()) {
+  const handlePingSubmit = async (content: any, mentions: string[], scenarioId: string, scenarioTitle: string) => {
+    if (!content.text.trim()) {
       toast.error('Please enter a message to ping')
       return
     }
 
     try {
-      // Here you would normally send the ping to your API
+      // Here you would normally send the ping to your API with rich content
       // For now, we'll just show a toast
-      toast.success(`Pinged scenario: ${scenarioTitle}`)
+      const mentionCount = mentions.length
+      const mentionText = mentionCount > 0 ? ` (mentioning ${mentionCount} member${mentionCount > 1 ? 's' : ''})` : ''
+      toast.success(`Pinged scenario: ${scenarioTitle}${mentionText}`)
       
       // Reset the ping state
       setPingingScenario(null)
@@ -506,19 +508,27 @@ export function WorkspaceContent({ workspace }: WorkspaceContentProps) {
 
                                 {isPinging && (
                                   <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                                    <div className="flex items-center gap-2 mb-2">
+                                    <div className="flex items-center gap-2 mb-3">
                                       <Bell className="h-4 w-4 text-blue-600" />
                                       <h6 className="text-sm font-medium text-blue-900 dark:text-blue-100">
                                         Add a note to this ping
                                       </h6>
                                     </div>
-                                    <Textarea
-                                      placeholder="Type @ to mention someone..."
-                                      value={pingMessage}
-                                      onChange={(e) => setPingMessage(e.target.value)}
-                                      className="min-h-[80px] mb-3 bg-white dark:bg-gray-800 border-blue-200 dark:border-blue-700 focus:border-blue-500 focus:ring-blue-500"
-                                      autoFocus
-                                    />
+                                    
+                                    <div className="mb-3">
+                                      <RichTextEditor
+                                        onSubmit={(content, mentions) => 
+                                          handlePingSubmit(content, mentions, scenario.id, scenario.title)
+                                        }
+                                        members={members.map(member => ({
+                                          id: member.id,
+                                          user: member.user
+                                        }))}
+                                        placeholder="Type @ to mention someone..."
+                                        className="border-blue-200 dark:border-blue-700"
+                                      />
+                                    </div>
+                                    
                                     <div className="flex items-center justify-end gap-2">
                                       <Button
                                         variant="ghost"
@@ -528,14 +538,6 @@ export function WorkspaceContent({ workspace }: WorkspaceContentProps) {
                                       >
                                         <X className="h-3 w-3 mr-1" />
                                         Cancel
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        onClick={() => handlePingSubmit(scenario.id, scenario.title)}
-                                        className="h-7 px-3 text-xs bg-blue-600 hover:bg-blue-700"
-                                      >
-                                        <Send className="h-3 w-3 mr-1" />
-                                        Send Ping
                                       </Button>
                                     </div>
                                   </div>
