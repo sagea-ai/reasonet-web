@@ -356,7 +356,7 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
         <TrialBannerWrapper />
       </TrialProvider>
       
-      <div className="max-w-6xl mx-auto px-8 py-16 mt-20 pb-32">
+      <div className="max-w-6xl mx-auto px-8 py-16 pb-32">
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-4xl font-bold text-gray-600 dark:text-gray-400 mb-2 tracking-tight">

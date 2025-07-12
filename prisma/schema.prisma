@@ -34,6 +34,8 @@ model User {
   referredBy              User?                @relation("UserReferrals", fields: [referredById], references: [id])
   referrals               User[]               @relation("UserReferrals")
   emailEvents             UserEmailEvent[]
+  createdWorkspaces       Workspace[]          @relation("WorkspaceCreator")
+  workspaceMemberships    WorkspaceMember[]
 
   @@map("users")
 }
@@ -54,6 +56,7 @@ model Organization {
   settings            OrganizationSettings?
   creator             User                  @relation("OrganizationCreator", fields: [creatorId], references: [id], onDelete: Cascade)
   repositories        Repository[]
+  workspaces          Workspace[]
 
   @@map("organizations")
 }
@@ -172,6 +175,7 @@ model Analysis {
   completedAt       DateTime?
   repositoryId      String
   userId            String
+  workspaceId       String?
   prNumber          Int?
   branch            String?
   commit            String?
@@ -180,6 +184,7 @@ model Analysis {
   fileIndexingJob   FileIndexingJob? @relation(fields: [fileIndexingJobId], references: [id])
   repository        Repository       @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
   createdBy         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace         Workspace?       @relation("WorkspaceAnalyses", fields: [workspaceId], references: [id], onDelete: SetNull)
   results           AnalysisResult[]
 }
 
@@ -349,6 +354,40 @@ model UserEmailEvent {
   @@map("user_email_events")
 }
 
+model Workspace {
+  id             String            @id @default(cuid())
+  name           String
+  description    String?
+  slug           String
+  icon           String?           @default("📝")
+  isPrivate      Boolean           @default(false)
+  organizationId String
+  creatorId      String
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @default(now())
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  creator        User              @relation("WorkspaceCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  members        WorkspaceMember[]
+  analyses       Analysis[]        @relation("WorkspaceAnalyses")
+
+  @@unique([organizationId, slug])
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String        @id @default(cuid())
+  role        WorkspaceRole @default(MEMBER)
+  userId      String
+  workspaceId String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now())
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@map("workspace_members")
+}
+
 enum CompanySize {
   JUST_ME
   TWO_TO_TEN
@@ -459,4 +498,11 @@ enum EmailEventType {
   TRIAL_ENDED
   USAGE_LIMIT_APPROACHING
   USAGE_LIMIT_REACHED
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
 }
