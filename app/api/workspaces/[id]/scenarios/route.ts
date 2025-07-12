@@ -21,13 +21,27 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Get scenarios for this workspace
     const scenarios = await db.scenario.findMany({
       where: {
         workspaceId: params.id,
         workspace: {
-          members: {
-            some: { userId: user.id }
+          OR: [
+            { creatorId: user.id },
+            {
+              members: {
+                some: { userId: user.id }
+              }
+            }
+          ]
+        }
+      },
+      include: {
+        workspace: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            icon: true
           }
         }
       },
