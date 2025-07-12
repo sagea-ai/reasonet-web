@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -332,7 +332,7 @@ export function ReasoningPageClient({
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.1 }}
-                          className="relative cursor-pointer min-h-[400px]"
+                          className="relative cursor-pointer h-[500px]"
                           onClick={() => toggleCard(index)}
                           style={{ perspective: '1000px' }}
                         >
@@ -343,7 +343,7 @@ export function ReasoningPageClient({
                           >
                             {/* Front of card - Scenario */}
                             <Card className="absolute inset-0 border-0 shadow-sm bg-white dark:bg-gray-800 backface-hidden overflow-hidden">
-                              <CardHeader className="pb-4">
+                              <CardHeader className="pb-4 flex-shrink-0">
                                 <div className="flex items-start justify-between">
                                   <Badge className={`${getTypeColor(scenario.type)} border text-xs font-medium w-fit`}>
                                     <span className="flex items-center gap-1">
@@ -362,8 +362,9 @@ export function ReasoningPageClient({
                                   </div>
                                 </div>
                               </CardHeader>
-                              <CardContent className="space-y-4 flex flex-col h-full">
-                                <div className="flex-1">
+                              
+                              <CardContent className="flex flex-col h-full overflow-hidden">
+                                <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent pr-2">
                                   <h3 className="font-semibold text-gray-900 dark:text-white mb-3 leading-tight">
                                     {scenario.title}
                                   </h3>
@@ -394,7 +395,7 @@ export function ReasoningPageClient({
                                   )}
                                 </div>
 
-                                <div className="flex items-center justify-center pt-4 border-t mt-auto">
+                                <div className="flex items-center justify-center pt-4 border-t mt-4 flex-shrink-0">
                                   <div className="flex items-center gap-2 text-sm text-gray-500">
                                     <IoBulbOutline className="w-4 h-4" />
                                     Click to see reasoning
@@ -405,7 +406,7 @@ export function ReasoningPageClient({
 
                             {/* Back of card - Reasoning */}
                             <Card className="absolute inset-0 border-0 shadow-sm bg-purple-50 dark:bg-purple-950/30 backface-hidden rotate-y-180 overflow-hidden">
-                              <CardHeader className="pb-4">
+                              <CardHeader className="pb-4 flex-shrink-0">
                                 <div className="flex items-center gap-2">
                                   <IoBulbOutline className="w-5 h-5 text-purple-600" />
                                   <h4 className="font-semibold text-purple-900 dark:text-purple-100">
@@ -413,8 +414,9 @@ export function ReasoningPageClient({
                                   </h4>
                                 </div>
                               </CardHeader>
-                              <CardContent className="space-y-4 flex flex-col h-full">
-                                <div className="flex-1">
+                              
+                              <CardContent className="flex flex-col h-full overflow-hidden">
+                                <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-300 dark:scrollbar-thumb-purple-600 scrollbar-track-transparent pr-2">
                                   {reasoning ? (
                                     <div className="text-purple-700 dark:text-purple-300 text-sm leading-relaxed">
                                       {reasoning.howICameToThisConclusion}
@@ -426,7 +428,7 @@ export function ReasoningPageClient({
                                   )}
                                 </div>
                                 
-                                <div className="flex items-center justify-center pt-4 border-t border-purple-200 dark:border-purple-800 mt-auto">
+                                <div className="flex items-center justify-center pt-4 border-t border-purple-200 dark:border-purple-800 mt-4 flex-shrink-0">
                                   <div className="flex items-center gap-2 text-sm text-purple-600">
                                     <IoRefreshOutline className="w-4 h-4" />
                                     Click to see scenario
