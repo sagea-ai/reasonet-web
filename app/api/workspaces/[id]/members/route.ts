@@ -159,7 +159,7 @@ export async function POST(
           ? `${inviter.firstName || ''} ${inviter.lastName || ''}`.trim() || inviter.email
           : 'A team member';
 
-        const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://reasonet.sagea.space'}/accept-invite?token=${invitation.token}&org=${workspace.organizationId}`;
+        const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.reasonet.sagea.space'}/accept-invite?token=${invitation.token}&org=${workspace.organizationId}`;
         
         await resend.emails.send({
           from: 'Reasonet <noreply@basabjha.com.np>',
