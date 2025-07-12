@@ -41,22 +41,29 @@ Analyze the given business idea/workflow and provide a JSON response with this e
       "timeframe": "Short-term/Medium-term/Long-term",
       "description": "Detailed explanation backed by real market data, industry statistics, and verifiable trends",
       "marketData": "Specific statistics, market size, growth rates, or industry benchmarks supporting this scenario",
-      "verifiableFactors": "Concrete data points that can be fact-checked (e.g., market reports, industry surveys, regulatory changes)"
+      "verifiableFactors": "Concrete data points that can be fact-checked (e.g., market reports, industry surveys, regulatory changes)",
+      "reasoningBacktrack": "Brief explanation of how I arrived at this conclusion, working backwards from the outcome to validate my reasoning process"
     }
   ],
   "backwardReasoning": [
     {
-      "finalOutcome": "Specific measurable outcome with quantifiable metrics",
-      "requiredConditions": "Conditions backed by industry data and market realities",
-      "causalChain": "Step-by-step reasoning with specific data points and market evidence",
-      "criticalAssumptions": "Assumptions that can be validated against real market data",
-      "riskFactors": "Specific risks backed by industry failure rates, market volatility data, or regulatory precedents",
-      "dataSupport": "Key statistics, market research, or industry reports that support this reasoning"
+      "scenarioTitle": "The scenario this reasoning applies to",
+      "howICameToThisConclusion": "Detailed explanation of how I arrived at this analysis based on the specific statistics and data I found. I considered X market data showing Y trend, which led me to conclude Z. My reasoning process involved analyzing [specific data points] and comparing them to [industry benchmarks/historical patterns]. The key statistics that influenced my conclusion were: [list specific numbers, percentages, growth rates]. Working backwards from the outcome, I validated this by checking [validation steps] and found confidence level of [X]%."
     }
   ],
   "recommendations": "Actionable recommendations based on proven market strategies and real industry success cases",
   "dataDisclaimer": "Note: This analysis is based on available market data and industry trends as of the analysis date. All statistics and projections should be verified with current market research and industry reports."
 }
+
+BACKWARD REASONING INSTRUCTIONS:
+For each scenario, explain your reasoning process by describing:
+1. What specific statistics or data points you analyzed
+2. How those statistics led to your conclusion
+3. What market trends or patterns you identified
+4. How you validated your reasoning by working backwards from the conclusion
+5. Your confidence level in the analysis
+
+Be specific about the data sources and numbers that influenced your thinking. Show your work like a researcher explaining their methodology.
 
 IMPORTANT GUIDELINES:
 - Use specific percentages, dollar amounts, market sizes, and timeframes when available
@@ -65,8 +72,9 @@ IMPORTANT GUIDELINES:
 - Ensure all claims can be researched and verified by human analysts
 - Include market data sources context where relevant (e.g., "based on industry reports", "according to market research")
 - Avoid speculation without factual basis
+- In backward reasoning, explicitly mention the statistics and data that led to your conclusions
 
-Generate exactly 3 scenarios with their corresponding backward reasoning. Be specific, factual, and ensure all analysis can be verified through market research. Return only valid JSON.`
+Generate exactly 3 scenarios with corresponding backward reasoning explanations. Be specific, factual, and ensure all analysis can be verified through market research. Return only valid JSON.`
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
@@ -74,7 +82,7 @@ Generate exactly 3 scenarios with their corresponding backward reasoning. Be spe
         { role: 'system', content: systemPrompt },
         { role: 'user', content: query }
       ],
-      temperature: 0.3, // Reduced temperature for more factual, less creative responses
+      temperature: 0.3,
       max_tokens: 4000,
     })
 
@@ -86,7 +94,6 @@ Generate exactly 3 scenarios with their corresponding backward reasoning. Be spe
     console.log('Raw AI response:', content)
 
     try {
-      // Try to parse the JSON response
       const jsonMatch = content.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
         const analysisData = JSON.parse(jsonMatch[0])
