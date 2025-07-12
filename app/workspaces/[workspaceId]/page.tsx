@@ -4,9 +4,9 @@ import { db } from "@/lib/db";
 import { WorkspaceDetailClient } from "@/components/workspaces/workspace-detail-client";
 
 interface WorkspacePageProps {
-  params: {
+  params: Promise<{
     workspaceId: string;
-  };
+  }>;
 }
 
 export default async function WorkspacePage({ params }: WorkspacePageProps) {
@@ -24,9 +24,10 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
     redirect("/sign-in");
   }
 
+  const resolvedParams = await params;
   const workspace = await db.workspace.findFirst({
     where: {
-      id: params.workspaceId,
+      id: resolvedParams.workspaceId,
       OR: [
         { creatorId: user.id },
         {

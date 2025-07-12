@@ -228,7 +228,7 @@ export async function POST(request: NextRequest) {
           })
 
           if (invitation) {
-            const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://reasonet.sagea.space'}/accept-invite?token=${invitation.token}&org=${result.organization.id}`
+            const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.reasonet.sagea.space'}/accept-invite?token=${invitation.token}&org=${result.organization.id}`
             
             await resend.emails.send({
               from: 'Reasonet <noreply@basabjha.com.np>',
