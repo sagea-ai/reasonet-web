@@ -8,6 +8,7 @@ import { BarChart3, FileText, Users, Plus, Activity, Mail } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { InviteWorkspaceMemberDialog } from './invite-workspace-member-dialog'
+import { WorkspaceActivityFeed } from './workspace-activity-feed'
 import { toast } from 'sonner'
 
 interface WorkspaceMember {
@@ -269,14 +270,10 @@ export function WorkspaceContent({ workspace }: WorkspaceContentProps) {
         </TabsContent>
 
         <TabsContent value="activity" className="space-y-6">
-          <h3 className="text-lg font-medium">Activity Feed</h3>
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-gray-500 text-center py-8">
-                No recent activity to show.
-              </p>
-            </CardContent>
-          </Card>
+          <WorkspaceActivityFeed 
+            workspaceId={workspace.id}
+            members={members}
+          />
         </TabsContent>
       </Tabs>
 
