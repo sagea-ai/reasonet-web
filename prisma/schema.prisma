@@ -373,9 +373,10 @@ model Workspace {
   creatorId      String
   creator        User         @relation("WorkspaceCreator", fields: [creatorId], references: [id])
 
-  members   WorkspaceMember[]
-  analyses  Analysis[]        @relation("WorkspaceAnalyses")
-  scenarios Scenario[]
+  members    WorkspaceMember[]
+  analyses   Analysis[]        @relation("WorkspaceAnalyses")
+  scenarios  Scenario[]
+  activities WorkspaceActivity[]
 
   @@map("workspaces")
 }
@@ -393,7 +394,6 @@ model WorkspaceMember {
   @@unique([userId, workspaceId])
   @@map("workspace_members")
 }
-
 model Scenario {
   id                String  @id @default(cuid())
   title             String
@@ -412,6 +412,51 @@ model Scenario {
   updatedAt DateTime @default(now())
 
   @@map("scenarios")
+}
+
+model WorkspaceActivity {
+  id          String   @id @default(cuid())
+  type        String
+  title       String
+  description String?
+  metadata    Json?
+  workspaceId String
+  authorId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+  
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  author    User      @relation("WorkspaceActivityAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  mentions  WorkspaceActivityMention[]
+
+  @@map("workspace_activities")
+}
+
+model WorkspaceActivityMention {
+  id                   String            @id @default(cuid())
+  workspaceActivityId  String
+  userId               String
+  createdAt            DateTime          @default(now())
+  
+  workspaceActivity WorkspaceActivity @relation(fields: [workspaceActivityId], references: [id], onDelete: Cascade)
+  user              User              @relation("WorkspaceActivityMentions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceActivityId, userId])
+  @@map("workspace_activity_mentions")
+}
+
+model UserNotification {
+  id           String           @id @default(cuid())
+  type         NotificationType
+  title        String
+  message      String
+  isRead       Boolean          @default(false)
+  userId       String
+  createdAt    DateTime         @default(now())
+  
+  user User @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_notifications")
 }
 
 enum CompanySize {
