@@ -147,8 +147,72 @@ export async function POST(
       }
     });
 
-    // TODO: Send invitation email with workspace context
-    // Email should mention they're being invited to join the workspace
+    // Send invitation email with workspace context
+    try {
+      const { Resend } = await import('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      
+      // Get inviter details
+      const inviter = await db.user.findUnique({
+        where: { id: requesterMember.userId },
+        select: {
+          firstName: true,
+          lastName: true,
+          email: true
+        }
+      });
+
+      const inviterName = inviter 
+        ? `${inviter.firstName || ''} ${inviter.lastName || ''}`.trim() || inviter.email
+        : 'A team member';
+
+      const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/accept-workspace-invite?token=${invitation.token}&workspace=${workspaceId}`;
+      
+      await resend.emails.send({
+        from: 'Reasonet <noreply@basabjha.com.np>',
+        to: email,
+        subject: `You're invited to join ${workspace.name} workspace`,
+        html: `
+          <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #0ea5e9; margin: 0;">Reasonet</h1>
+            </div>
+            
+            <h2 style="color: #1f2937; margin-bottom: 20px;">You're invited to join ${workspace.name}</h2>
+            
+            <p style="color: #4b5563; line-height: 1.6; margin-bottom: 20px;">
+              Hi there! <strong>${inviterName}</strong> has invited you to join the <strong>${workspace.name}</strong> workspace in <strong>${workspace.organization.name}</strong> on Reasonet.
+            </p>
+            
+            <p style="color: #4b5563; line-height: 1.6; margin-bottom: 30px;">
+              As a workspace member, you'll be able to collaborate on code analyses, review insights, and work together to improve code quality.
+            </p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${inviteUrl}" 
+                 style="background-color: #0ea5e9; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: 500; display: inline-block;">
+                Accept Invitation
+              </a>
+            </div>
+            
+            <p style="color: #6b7280; font-size: 14px; line-height: 1.5; margin-top: 30px;">
+              This invitation will expire in 7 days. If you didn't expect this invitation, you can safely ignore this email.
+            </p>
+            
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+            
+            <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+              © ${new Date().getFullYear()} Reasonet. All rights reserved.
+            </p>
+          </div>
+        `
+      });
+
+      console.log('Workspace invitation email sent successfully to:', email);
+    } catch (emailError) {
+      console.error('Failed to send workspace invitation email:', emailError);
+      // Don't fail the entire request if email fails
+    }
 
     return NextResponse.json({ 
       success: true,
