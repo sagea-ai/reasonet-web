@@ -119,7 +119,7 @@ export function WorkspaceContent({ workspace }: WorkspaceContentProps) {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="analyses">Analyses</TabsTrigger>
           <TabsTrigger value="members">Members</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
+          <TabsTrigger value="activity">Feed</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
