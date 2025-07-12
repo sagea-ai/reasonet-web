@@ -30,6 +30,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import ReactMarkdown from 'react-markdown'
 import { TrialProvider } from '../trial/trial-provider'
 import { TrialBannerWrapper } from '../trial/trial-banner-wrapper'
 import { WorkspaceSelectionModal } from './workspace-selection-modal'
@@ -272,10 +273,10 @@ export function ReasoningPageClient({
   }
 
   const getProbabilityColor = (probability: number) => {
-    if (probability >= 80) return 'text-red-600'
-    if (probability >= 60) return 'text-orange-600'
+    if (probability >= 80) return 'text-green-600'
+    if (probability >= 60) return 'text-blue-600'
     if (probability >= 40) return 'text-yellow-600'
-    return 'text-green-600'
+    return 'text-gray-600'
   }
 
   return (
@@ -332,31 +333,50 @@ export function ReasoningPageClient({
 
                 {/* Overview Tab */}
                 <TabsContent value="overview" className="space-y-6">
-                  {result.businessSummary && (
-                    <Card className="border-0 shadow-sm">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <IoBusinessOutline className="w-5 h-5 text-blue-600" />
-                          Business Analysis Overview
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                          {result.businessSummary}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  )}
+                  {/* Business Summary */}
+                  <Card className="border-0 shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <IoBusinessOutline className="w-5 h-5 text-blue-600" />
+                        Business Analysis Overview
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {result.businessSummary ? (
+                        <div className="prose prose-gray dark:prose-invert max-w-none">
+                          <ReactMarkdown 
+                            components={{
+                              p: ({children}) => <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4 text-justify">{children}</p>,
+                              strong: ({children}) => <strong className="font-semibold text-gray-900 dark:text-white">{children}</strong>,
+                              em: ({children}) => <em className="italic text-gray-700 dark:text-gray-300">{children}</em>,
+                              ul: ({children}) => <ul className="list-disc list-inside mb-4 space-y-1 text-gray-700 dark:text-gray-300">{children}</ul>,
+                              ol: ({children}) => <ol className="list-decimal list-inside mb-4 space-y-1 text-gray-700 dark:text-gray-300">{children}</ol>,
+                              li: ({children}) => <li className="text-gray-700 dark:text-gray-300 leading-relaxed">{children}</li>,
+                            }}
+                          >
+                            {result.businessSummary}
+                          </ReactMarkdown>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <IoBusinessOutline className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                          <p className="text-gray-600 dark:text-gray-400">
+                            No business summary available for this analysis.
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
 
                   {/* Quick Stats */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card className="border-0 shadow-sm">
+                    <Card className="border-0 shadow-lg">
                       <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-sm text-gray-600 dark:text-gray-400">Total Scenarios</p>
                             <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                              {result.scenarios?.length || 0}
+                              {Array.isArray(result.scenarios) ? result.scenarios.length : 0}
                             </p>
                           </div>
                           <IoStatsChartOutline className="w-8 h-8 text-blue-600" />
@@ -364,14 +384,14 @@ export function ReasoningPageClient({
                       </CardContent>
                     </Card>
 
-                    <Card className="border-0 shadow-sm">
+                    <Card className="border-0 shadow-lg">
                       <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-sm text-gray-600 dark:text-gray-400">Avg. Probability</p>
                             <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                              {result.scenarios?.length > 0 
-                                ? Math.round(result.scenarios.reduce((sum, s) => sum + s.probability, 0) / result.scenarios.length)
+                              {Array.isArray(result.scenarios) && result.scenarios.length > 0 
+                                ? Math.round(result.scenarios.reduce((sum, s) => sum + (s.probability || 0), 0) / result.scenarios.length)
                                 : 0}%
                             </p>
                           </div>
@@ -380,13 +400,13 @@ export function ReasoningPageClient({
                       </CardContent>
                     </Card>
 
-                    <Card className="border-0 shadow-sm">
+                    <Card className="border-0 shadow-lg">
                       <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-sm text-gray-600 dark:text-gray-400">High Risk</p>
                             <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                              {result.scenarios?.filter(s => s.probability >= 70).length || 0}
+                              {Array.isArray(result.scenarios) ? result.scenarios.filter(s => (s.probability || 0) >= 70).length : 0}
                             </p>
                           </div>
                           <IoWarningOutline className="w-8 h-8 text-orange-600" />
@@ -398,11 +418,37 @@ export function ReasoningPageClient({
 
                 {/* Scenarios & Reasoning Tab */}
                 <TabsContent value="scenarios" className="space-y-6">
-                  <div className="grid grid-cols-1 xl:grid-cols-3 lg:grid-cols-2 gap-6">
-                    {result.scenarios?.map((scenario, index) => {
-                      const reasoning = result.backwardReasoning?.find(r => r.scenarioTitle === scenario.title)
-                      const isFlipped = flippedCards.has(index)
-                      const isSaved = savedScenarios.has(scenario.title)
+                  {!Array.isArray(result.scenarios) || result.scenarios.length === 0 ? (
+                    <Card className="border-0 shadow-lg">
+                      <CardContent className="p-8 text-center">
+                        <IoAnalyticsOutline className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                          No Scenarios Available
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-400">
+                          No scenarios were generated for this analysis.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="grid grid-cols-1 xl:grid-cols-3 lg:grid-cols-2 gap-6">
+                      {result.scenarios.map((scenario, index) => {
+                        // Ensure scenario has required properties
+                        const safeScenario = {
+                          title: scenario.title || `Scenario ${index + 1}`,
+                          type: scenario.type || 'Analysis',
+                          probability: scenario.probability || 0,
+                          timeframe: scenario.timeframe || 'Unknown',
+                          description: scenario.description || 'No description available.',
+                          marketData: scenario.marketData,
+                          verifiableFactors: scenario.verifiableFactors
+                        }
+                        
+                        const reasoning = Array.isArray(result.backwardReasoning) 
+                          ? result.backwardReasoning.find(r => r.scenarioTitle === safeScenario.title)
+                          : null
+                        const isFlipped = flippedCards.has(index)
+                        const isSaved = savedScenarios.has(safeScenario.title)
 
                       return (
                         <motion.div
@@ -420,16 +466,16 @@ export function ReasoningPageClient({
                             style={{ transformStyle: 'preserve-3d' }}
                           >
                             {/* Front of card - Scenario */}
-                            <Card className={`absolute inset-0 border-0 shadow-sm bg-white dark:bg-gray-800 backface-hidden overflow-hidden ${
+                            <Card className={`absolute inset-0 border-0 shadow-lg bg-white dark:bg-gray-800 backface-hidden overflow-hidden transition-all duration-300 hover:shadow-xl ${
                               isSaved ? 'ring-2 ring-green-200 bg-green-50 dark:bg-green-900/20' : ''
                             }`}>
                               <CardHeader className="pb-4 flex-shrink-0">
-                                <div className="flex items-start justify-between">
+                                <div className="flex items-start justify-between mb-3">
                                   <div className="flex items-center gap-2">
-                                    <Badge className={`${getTypeColor(scenario.type)} border text-xs font-medium w-fit`}>
+                                    <Badge className={`${getTypeColor(safeScenario.type)} border text-xs font-medium w-fit`}>
                                       <span className="flex items-center gap-1">
-                                        {getTypeIcon(scenario.type)}
-                                        {scenario.type}
+                                        {getTypeIcon(safeScenario.type)}
+                                        {safeScenario.type}
                                       </span>
                                     </Badge>
                                     {isSaved && (
@@ -439,79 +485,82 @@ export function ReasoningPageClient({
                                       </Badge>
                                     )}
                                   </div>
-                                  <div className="flex items-center gap-2">
-                                    <Button
-                                      size="sm"
-                                      variant={isSaved ? "default" : "outline"}
-                                      onClick={(e) => {
-                                        e.stopPropagation() // Prevent card flip
-                                        if (!isSaved) {
-                                          setSelectedScenario(scenario)
-                                          setWorkspaceModalOpen(true)
-                                        }
-                                      }}
-                                      disabled={savingScenario || isSaved}
-                                      className={isSaved 
-                                        ? "bg-green-600 hover:bg-green-700 text-white border-green-600" 
-                                        : "bg-white/80 hover:bg-white border-gray-200 text-gray-700 hover:text-gray-900"
-                                      }
-                                    >
-                                      {savingScenario && selectedScenario?.title === scenario.title ? (
-                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></div>
-                                      ) : isSaved ? (
-                                        <IoCheckmarkCircleOutline className="w-4 h-4 mr-1" />
-                                      ) : (
-                                        <IoSaveOutline className="w-4 h-4 mr-1" />
-                                      )}
-                                      {isSaved ? 'Saved' : 'Save'}
-                                    </Button>
-                                    <div className="text-right">
-                                      <div className={`text-xl font-bold ${getProbabilityColor(scenario.probability)}`}>
-                                        {scenario.probability}%
-                                      </div>
-                                      <div className="text-xs text-gray-500 flex items-center gap-1">
-                                        <IoTimeOutline className="w-3 h-3" />
-                                        {scenario.timeframe}
-                                      </div>
+                                  <div className="text-right bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                                    <div className={`text-3xl font-bold ${getProbabilityColor(safeScenario.probability)} tracking-tight`}>
+                                      {safeScenario.probability}%
+                                    </div>
+                                    <div className="text-xs text-gray-500 flex items-center gap-1 justify-end mt-1">
+                                      <IoTimeOutline className="w-3 h-3" />
+                                      {safeScenario.timeframe}
                                     </div>
                                   </div>
                                 </div>
+                                
+                                {/* Professional Save Button */}
+                                <div className="flex justify-end">
+                                  <Button
+                                    size="sm"
+                                    variant={isSaved ? "default" : "outline"}
+                                    onClick={(e) => {
+                                      e.stopPropagation() // Prevent card flip
+                                      if (!isSaved) {
+                                        setSelectedScenario(safeScenario)
+                                        setWorkspaceModalOpen(true)
+                                      }
+                                    }}
+                                    disabled={savingScenario || isSaved}
+                                    className={`transition-all duration-200 ${
+                                      isSaved 
+                                        ? "bg-green-600 hover:bg-green-700 text-white border-green-600 shadow-sm" 
+                                        : "bg-white hover:bg-gray-50 border-gray-300 text-gray-700 hover:text-gray-900 hover:border-gray-400 shadow-sm hover:shadow-md"
+                                    }`}
+                                  >
+                                    {savingScenario && selectedScenario?.title === scenario.title ? (
+                                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
+                                    ) : isSaved ? (
+                                      <IoCheckmarkCircleOutline className="w-4 h-4 mr-2" />
+                                    ) : (
+                                      <IoSaveOutline className="w-4 h-4 mr-2" />
+                                    )}
+                                    {isSaved ? 'Saved' : 'Save Scenario'}
+                                  </Button>
+                                </div>
                               </CardHeader>
                               
-                              <CardContent className="flex flex-col h-full overflow-hidden">
-                                <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent pr-2">
-                                  <h3 className="font-semibold text-gray-900 dark:text-white mb-3 leading-tight">
-                                    {scenario.title}
+                              <CardContent className="flex flex-col h-full overflow-hidden pt-0">
+                                <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent pr-2 hover:scrollbar-thumb-gray-300 dark:hover:scrollbar-thumb-gray-600">
+                                  <h3 className="font-semibold text-gray-900 dark:text-white mb-3 leading-tight text-lg text-center">
+                                    {safeScenario.title}
                                   </h3>
-                                  <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-4">
-                                    {scenario.description}
+                                  <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-4 text-justify">
+                                    {safeScenario.description}
                                   </p>
                                   
-                                  {scenario.marketData && (
+                                  {safeScenario.marketData && (
                                     <div className="border-t pt-3 mb-3">
-                                      <h4 className="text-xs font-medium text-gray-900 dark:text-white mb-2">
+                                      <h4 className="text-xs font-medium text-gray-900 dark:text-white mb-2 text-center">
                                         Market Data
                                       </h4>
-                                      <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                                        {scenario.marketData}
+                                      <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed text-justify">
+                                        {safeScenario.marketData}
                                       </p>
                                     </div>
                                   )}
                                   
-                                  {scenario.verifiableFactors && (
+                                  {safeScenario.verifiableFactors && (
                                     <div className="border-t pt-3 mb-3">
-                                      <h4 className="text-xs font-medium text-gray-900 dark:text-white mb-2">
+                                      <h4 className="text-xs font-medium text-gray-900 dark:text-white mb-2 text-center">
                                         Verifiable Factors
                                       </h4>
-                                      <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                                        {scenario.verifiableFactors}
+                                      <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed text-justify">
+                                        {safeScenario.verifiableFactors}
                                       </p>
                                     </div>
                                   )}
                                 </div>
 
-                                <div className="flex items-center justify-center pt-4 border-t mt-4 flex-shrink-0">
-                                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                                <div className="flex items-center justify-center pt-4 border-t border-gray-100 dark:border-gray-700 mt-4 flex-shrink-0">
+                                  <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 dark:bg-gray-700/50 px-3 py-2 rounded-lg">
                                     <IoBulbOutline className="w-4 h-4" />
                                     Click to see reasoning
                                   </div>
@@ -520,7 +569,7 @@ export function ReasoningPageClient({
                             </Card>
 
                             {/* Back of card - Reasoning */}
-                            <Card className={`absolute inset-0 border-0 shadow-sm bg-purple-50 dark:bg-purple-950/30 backface-hidden rotate-y-180 overflow-hidden ${
+                            <Card className={`absolute inset-0 border-0 shadow-lg bg-purple-50 dark:bg-purple-950/30 backface-hidden rotate-y-180 overflow-hidden transition-all duration-300 hover:shadow-xl ${
                               isSaved ? 'ring-2 ring-green-200' : ''
                             }`}>
                               <CardHeader className="pb-4 flex-shrink-0">
@@ -541,20 +590,20 @@ export function ReasoningPageClient({
                               </CardHeader>
                               
                               <CardContent className="flex flex-col h-full overflow-hidden">
-                                <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-300 dark:scrollbar-thumb-purple-600 scrollbar-track-transparent pr-2">
+                                <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-200 dark:scrollbar-thumb-purple-700 scrollbar-track-transparent pr-2 hover:scrollbar-thumb-purple-300 dark:hover:scrollbar-thumb-purple-600">
                                   {reasoning ? (
-                                    <div className="text-purple-700 dark:text-purple-300 text-sm leading-relaxed">
+                                    <div className="text-purple-700 dark:text-purple-300 text-sm leading-relaxed text-justify">
                                       {reasoning.howICameToThisConclusion}
                                     </div>
                                   ) : (
-                                    <div className="text-purple-700 dark:text-purple-300 text-sm">
+                                    <div className="text-purple-700 dark:text-purple-300 text-sm text-center">
                                       No detailed reasoning available for this scenario.
                                     </div>
                                   )}
                                 </div>
                                 
                                 <div className="flex items-center justify-center pt-4 border-t border-purple-200 dark:border-purple-800 mt-4 flex-shrink-0">
-                                  <div className="flex items-center gap-2 text-sm text-purple-600">
+                                  <div className="flex items-center gap-2 text-sm text-purple-600 bg-purple-50 dark:bg-purple-900/30 px-3 py-2 rounded-lg">
                                     <IoRefreshOutline className="w-4 h-4" />
                                     Click to see scenario
                                   </div>
@@ -565,12 +614,13 @@ export function ReasoningPageClient({
                         </motion.div>
                       )
                     })}
-                  </div>
+                    </div>
+                  )}
                 </TabsContent>
 
                 {/* Recommendations Tab */}
                 <TabsContent value="recommendations" className="space-y-6">
-                  <Card className="border-0 shadow-sm">
+                  <Card className="border-0 shadow-lg">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <IoCheckmarkCircleOutline className="w-5 h-5 text-green-600" />
@@ -578,10 +628,26 @@ export function ReasoningPageClient({
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="prose prose-gray dark:prose-invert max-w-none">
-                        <pre className="whitespace-pre-wrap text-gray-700 dark:text-gray-300 leading-relaxed font-sans">
+                      <div className="prose prose-gray dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 leading-relaxed">
+                        <ReactMarkdown 
+                          components={{
+                            h1: ({children}) => <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 mt-6 first:mt-0">{children}</h1>,
+                            h2: ({children}) => <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3 mt-5 first:mt-0">{children}</h2>,
+                            h3: ({children}) => <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 mt-4 first:mt-0">{children}</h3>,
+                            h4: ({children}) => <h4 className="text-base font-medium text-gray-900 dark:text-white mb-2 mt-3 first:mt-0">{children}</h4>,
+                            p: ({children}) => <p className="text-gray-700 dark:text-gray-300 mb-4 text-justify leading-relaxed">{children}</p>,
+                            ul: ({children}) => <ul className="list-disc list-inside mb-4 space-y-1 text-gray-700 dark:text-gray-300">{children}</ul>,
+                            ol: ({children}) => <ol className="list-decimal list-inside mb-4 space-y-1 text-gray-700 dark:text-gray-300">{children}</ol>,
+                            li: ({children}) => <li className="text-gray-700 dark:text-gray-300 leading-relaxed">{children}</li>,
+                            strong: ({children}) => <strong className="font-semibold text-gray-900 dark:text-white">{children}</strong>,
+                            em: ({children}) => <em className="italic text-gray-700 dark:text-gray-300">{children}</em>,
+                            blockquote: ({children}) => <blockquote className="border-l-4 border-green-500 pl-4 py-2 my-4 bg-green-50 dark:bg-green-900/20 italic text-gray-700 dark:text-gray-300">{children}</blockquote>,
+                            code: ({children}) => <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-sm font-mono text-gray-800 dark:text-gray-200">{children}</code>,
+                            pre: ({children}) => <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto mb-4">{children}</pre>,
+                          }}
+                        >
                           {result.recommendations}
-                        </pre>
+                        </ReactMarkdown>
                       </div>
                     </CardContent>
                   </Card>
@@ -634,6 +700,50 @@ export function ReasoningPageClient({
         }
         .preserve-3d {
           transform-style: preserve-3d;
+        }
+        
+        /* Custom scrollbar styling for better integration */
+        .scrollbar-thin::-webkit-scrollbar {
+          width: 4px;
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+          background: rgba(156, 163, 175, 0.3);
+          border-radius: 2px;
+          transition: background 0.2s ease;
+        }
+        
+        .scrollbar-thin:hover::-webkit-scrollbar-thumb {
+          background: rgba(156, 163, 175, 0.5);
+        }
+        
+        .dark .scrollbar-thin::-webkit-scrollbar-thumb {
+          background: rgba(75, 85, 99, 0.3);
+        }
+        
+        .dark .scrollbar-thin:hover::-webkit-scrollbar-thumb {
+          background: rgba(75, 85, 99, 0.5);
+        }
+        
+        /* Purple scrollbar for reasoning cards */
+        .scrollbar-thin[class*="scrollbar-thumb-purple"]::-webkit-scrollbar-thumb {
+          background: rgba(147, 51, 234, 0.2);
+        }
+        
+        .scrollbar-thin[class*="scrollbar-thumb-purple"]:hover::-webkit-scrollbar-thumb {
+          background: rgba(147, 51, 234, 0.4);
+        }
+        
+        .dark .scrollbar-thin[class*="scrollbar-thumb-purple"]::-webkit-scrollbar-thumb {
+          background: rgba(168, 85, 247, 0.2);
+        }
+        
+        .dark .scrollbar-thin[class*="scrollbar-thumb-purple"]:hover::-webkit-scrollbar-thumb {
+          background: rgba(168, 85, 247, 0.4);
         }
       `}</style>
     </div>
