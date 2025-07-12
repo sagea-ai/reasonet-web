@@ -29,6 +29,8 @@ interface SimulateState {
   redo: () => void
   saveToHistory: () => void
   generateWorkflowPrompt: () => string
+  setNodes: (nodes: Node[]) => void
+  setEdges: (edges: Edge[]) => void
 }
 
 const initialState = {
@@ -53,6 +55,16 @@ const generateEdgeId = () => {
 export const useSimulateStore = create<SimulateState>((set, get) => ({
   ...initialState,
 
+  setNodes: (nodes) => {
+    set({ nodes })
+    get().saveToHistory()
+  },
+
+  setEdges: (edges) => {
+    set({ edges })
+    get().saveToHistory()
+  },
+
   onNodesChange: (changes) => {
     console.log('onNodesChange called with:', changes)
     
@@ -70,7 +82,7 @@ export const useSimulateStore = create<SimulateState>((set, get) => ({
     
     set((state) => {
       const newNodes = applyNodeChanges(changes, state.nodes)
-      console.log('Nodes after change:', newNodes.map(n => ({ id: n.id, label: n.data.label })))
+      console.log('Nodes after change:', newNodes.map(n => ({ id: n.id, label: n.data?.label })))
       return { nodes: newNodes }
     })
   },
@@ -131,7 +143,7 @@ export const useSimulateStore = create<SimulateState>((set, get) => ({
       }
       
       const newNodes = [...state.nodes, nodeWithId]
-      console.log('Nodes after add:', newNodes.map(n => ({ id: n.id, label: n.data.label })))
+      console.log('Nodes after add:', newNodes.map(n => ({ id: n.id, label: n.data?.label })))
       return { nodes: newNodes }
     })
     get().saveToHistory()
@@ -144,7 +156,7 @@ export const useSimulateStore = create<SimulateState>((set, get) => ({
       const newEdges = state.edges.filter(
         (edge) => edge.source !== nodeId && edge.target !== nodeId
       )
-      console.log('Nodes after remove:', newNodes.map(n => ({ id: n.id, label: n.data.label })))
+      console.log('Nodes after remove:', newNodes.map(n => ({ id: n.id, label: n.data?.label })))
       return { nodes: newNodes, edges: newEdges }
     })
     get().saveToHistory()
@@ -159,13 +171,12 @@ export const useSimulateStore = create<SimulateState>((set, get) => ({
     }
     
     const currentState = get()
-    console.log('Current nodes before update:', currentState.nodes.map(n => ({ id: n.id, label: n.data.label })))
+    console.log('Current nodes before update:', currentState.nodes.map(n => ({ id: n.id, label: n.data?.label })))
     
     const nodeExists = currentState.nodes.find(node => node.id === nodeId)
     if (!nodeExists) {
       console.error('Node not found:', nodeId)
-      console.log('Available nodes:', currentState.nodes.map(n => ({ id: n.id, label: n.data.label })))
-      // Instead of returning early, we'll gracefully handle this
+      console.log('Available nodes:', currentState.nodes.map(n => ({ id: n.id, label: n.data?.label })))
       return false
     }
 
@@ -186,7 +197,7 @@ export const useSimulateStore = create<SimulateState>((set, get) => ({
           return node
         })
         
-        console.log('New nodes after update:', newNodes.map(n => ({ id: n.id, label: n.data.label })))
+        console.log('New nodes after update:', newNodes.map(n => ({ id: n.id, label: n.data?.label })))
         return { nodes: newNodes }
       })
       
@@ -326,7 +337,7 @@ export const useSimulateStore = create<SimulateState>((set, get) => ({
     const { nodes, edges, history, historyIndex } = get()
     
     console.log('Saving to history, current state:', {
-      nodes: nodes.map(n => ({ id: n.id, label: n.data.label })),
+      nodes: nodes.map(n => ({ id: n.id, label: n.data?.label })),
       edges: edges.map(e => ({ id: e.id, source: e.source, target: e.target }))
     })
 
@@ -369,11 +380,13 @@ export const useSimulateStore = create<SimulateState>((set, get) => ({
 
     prompt += '=== COMPONENTS ===\n'
     nodes.forEach((node, index) => {
-      prompt += `${index + 1}. ${node.data.label} (${node.data.nodeType})\n`
-      if (node.data.description) {
+      const label = node.data?.label || `Node ${index + 1}`
+      const nodeType = node.data?.nodeType || 'component'
+      prompt += `${index + 1}. ${label} (${nodeType})\n`
+      if (node.data?.description) {
         prompt += `   Description: ${node.data.description}\n`
       }
-      if (node.data.customConfig) {
+      if (node.data?.customConfig) {
         prompt += `   Configuration: ${node.data.customConfig}\n`
       }
       prompt += '\n'
@@ -393,7 +406,10 @@ export const useSimulateStore = create<SimulateState>((set, get) => ({
         const targetNode = nodes.find((n) => n.id === edge.target)
         
         const stepNumber = edge.data?.stepNumber || `${index + 1}`
-        prompt += `Step ${stepNumber}: ${sourceNode?.data.label} → ${targetNode?.data.label}\n`
+        const sourceLabel = sourceNode?.data?.label || 'Unknown Source'
+        const targetLabel = targetNode?.data?.label || 'Unknown Target'
+        
+        prompt += `Step ${stepNumber}: ${sourceLabel} → ${targetLabel}\n`
         
         if (edge.data?.description) {
           prompt += `   Flow: ${edge.data.description}\n`
