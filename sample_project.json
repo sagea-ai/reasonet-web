@@ -1,0 +1,137 @@
+{
+  "nodes": [
+    {
+      "id": "start-1752299990000-abcd1234",
+      "type": "custom",
+      "position": { "x": 0, "y": -300 },
+      "data": {
+        "label": "Start",
+        "nodeType": "start",
+        "description": "User lands on the platform",
+        "isCustom": true
+      },
+      "measured": { "width": 180, "height": 80 }
+    },
+    {
+      "id": "form-1752300000001-efgh5678",
+      "type": "custom",
+      "position": { "x": 250, "y": -300 },
+      "data": {
+        "label": "User Profile Form",
+        "nodeType": "form-trigger",
+        "description": "User fills out their skill profile and goals",
+        "isCustom": false
+      },
+      "measured": { "width": 280, "height": 80 }
+    },
+    {
+      "id": "vetting-1752300005002-ijkl9012",
+      "type": "custom",
+      "position": { "x": 500, "y": -300 },
+      "data": {
+        "label": "Auto Vetting Module",
+        "nodeType": "auto-vetting-module",
+        "description": "Auto-checks user's experience, GitHub, LinkedIn",
+        "isCustom": true
+      },
+      "measured": { "width": 300, "height": 80 }
+    },
+    {
+      "id": "matching-1752300010003-mnop3456",
+      "type": "custom",
+      "position": { "x": 750, "y": -300 },
+      "data": {
+        "label": "AI Matching Engine",
+        "nodeType": "ai-matching-engine",
+        "description": "Matches user to available projects",
+        "isCustom": true
+      },
+      "measured": { "width": 300, "height": 80 }
+    },
+    {
+      "id": "tracker-1752300015004-qrst7890",
+      "type": "custom",
+      "position": { "x": 750, "y": -100 },
+      "data": {
+        "label": "Project Tracker",
+        "nodeType": "project-tracker",
+        "description": "Live task tracking & milestone updates",
+        "isCustom": true
+      },
+      "measured": { "width": 300, "height": 80 }
+    },
+    {
+      "id": "insight-1752300020005-uvwx1234",
+      "type": "custom",
+      "position": { "x": 500, "y": 100 },
+      "data": {
+        "label": "Insight Generator",
+        "nodeType": "insight-generator",
+        "description": "Summarizes user value + feedback report",
+        "isCustom": true
+      },
+      "measured": { "width": 300, "height": 80 }
+    },
+    {
+      "id": "xp-engine-1752300025006-yzab5678",
+      "type": "custom",
+      "position": { "x": 250, "y": 100 },
+      "data": {
+        "label": "XP Engine",
+        "nodeType": "xp-engine",
+        "description": "Gives user XP + improves trust score",
+        "isCustom": true
+      },
+      "measured": { "width": 250, "height": 80 }
+    }
+  ],
+  "edges": [
+    {
+      "source": "start-1752299990000-abcd1234",
+      "target": "form-1752300000001-efgh5678",
+      "id": "edge-1",
+      "type": "custom",
+      "data": { "stepNumber": 1, "description": "User redirected to fill skill profile" }
+    },
+    {
+      "source": "form-1752300000001-efgh5678",
+      "target": "vetting-1752300005002-ijkl9012",
+      "id": "edge-2",
+      "type": "custom",
+      "data": { "stepNumber": 2, "description": "Form data is sent to vetting module" }
+    },
+    {
+      "source": "vetting-1752300005002-ijkl9012",
+      "target": "matching-1752300010003-mnop3456",
+      "id": "edge-3",
+      "type": "custom",
+      "data": { "stepNumber": 3, "description": "Valid user sent to AI matcher" }
+    },
+    {
+      "source": "matching-1752300010003-mnop3456",
+      "target": "tracker-1752300015004-qrst7890",
+      "id": "edge-4",
+      "type": "custom",
+      "data": { "stepNumber": 4, "description": "Matched to project and tracking begins" }
+    },
+    {
+      "source": "tracker-1752300015004-qrst7890",
+      "target": "insight-1752300020005-uvwx1234",
+      "id": "edge-5",
+      "type": "custom",
+      "data": { "stepNumber": 5, "description": "Insights are generated post project" }
+    },
+    {
+      "source": "insight-1752300020005-uvwx1234",
+      "target": "xp-engine-1752300025006-yzab5678",
+      "id": "edge-6",
+      "type": "custom",
+      "data": { "stepNumber": 6, "description": "XP and trust score updated" }
+    }
+  ],
+  "metadata": {
+    "name": "skillbridge-workflow",
+    "created": "2025-07-12T06:00:00.000Z",
+    "version": "1.0"
+  }
+}
