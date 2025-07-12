@@ -90,7 +90,7 @@ export function WorkspaceList({ workspaces, onCreateWorkspace }: WorkspaceListPr
           {workspaces.map((workspace) => (
             <Card 
               key={workspace.id} 
-              className="hover:shadow-md transition-shadow cursor-pointer group"
+              className="hover:shadow-mdtransition-shadow cursor-pointer group"
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
