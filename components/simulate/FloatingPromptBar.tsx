@@ -36,10 +36,15 @@ export function FloatingPromptBar({
         if (index < prompt.length) {
           setDisplayedPrompt(prompt.substring(0, index + 1))
           index++
-          typingTimeoutRef.current = setTimeout(typeChar, 20)
+          typingTimeoutRef.current = setTimeout(typeChar, 10) // Faster typing
         } else {
-          setIsTyping(false)
-          setCurrentPrompt(prompt)
+          // Animation complete - reset states to allow interaction
+          setTimeout(() => {
+            setIsTyping(false)
+            setCurrentPrompt(prompt)
+            setDisplayedPrompt(prompt)
+            onPromptChange?.(prompt)
+          }, 100) // Small delay to ensure smooth transition
         }
       }
       
@@ -47,6 +52,7 @@ export function FloatingPromptBar({
     } else if (prompt && !isAnimating) {
       setCurrentPrompt(prompt)
       setDisplayedPrompt(prompt)
+      onPromptChange?.(prompt)
     }
 
     return () => {
@@ -54,7 +60,7 @@ export function FloatingPromptBar({
         clearTimeout(typingTimeoutRef.current)
       }
     }
-  }, [prompt, isAnimating, currentPrompt])
+  }, [prompt, isAnimating]) // Removed currentPrompt from dependencies to avoid infinite loop
 
   const handleInputChange = (value: string) => {
     if (!isTyping && !isLoading) {
@@ -93,6 +99,9 @@ export function FloatingPromptBar({
     }
   }, [displayedPrompt])
 
+  // Check if we can run the workflow
+  const canRunWorkflow = currentPrompt.trim() && !isTyping && !isLoading
+
   return (
     <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-40 w-full max-w-4xl px-6">
       <div className="bg-neutral-100/60 backdrop-blur-2xl dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-xl overflow-hidden">
@@ -107,7 +116,7 @@ export function FloatingPromptBar({
             <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
               {isLoading ? 'Processing...' : isTyping ? 'Generating...' : 'Describe your workflow'}
             </h3>
-            {currentPrompt && !isLoading && (
+            {currentPrompt && !isLoading && !isTyping && (
               <button
                 onClick={handleCopy}
                 className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -130,8 +139,8 @@ export function FloatingPromptBar({
               onChange={(e) => handleInputChange(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Tell me about the workflow you want to create, or I can generate one from your diagram..."
-              className={`w-full p-4 bg-transparent dark:bg-gray-800 rounded-2xl text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 resize-none min-h-[70px] max-h-[200px] focus:outline-none  ${
-                isLoading ? 'opacity-60' : ''
+              className={`w-full p-4 bg-transparent dark:bg-gray-800 rounded-2xl text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 resize-none min-h-[70px] max-h-[200px] focus:outline-none border-0 ${
+                isLoading || isTyping ? 'opacity-60' : ''
               }`}
               disabled={isTyping || isLoading}
             />
@@ -158,15 +167,22 @@ export function FloatingPromptBar({
                   )}
                 </>
               )}
+              {isTyping && (
+                <span className="text-sky-500">Generating prompt from workflow...</span>
+              )}
             </div>
             
             <button
               onClick={handleSubmit}
-              disabled={!currentPrompt.trim() || isTyping || isLoading}
-              className="px-6 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              disabled={!canRunWorkflow}
+              className={`px-6 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 ${
+                canRunWorkflow 
+                  ? 'bg-sky-500 hover:bg-sky-600 text-white' 
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+              }`}
             >
               <Send className="w-4 h-4" />
-              {isLoading ? 'Processing...' : 'Run Workflow'}
+              {isLoading ? 'Processing...' : isTyping ? 'Generating...' : 'Run Workflow'}
             </button>
           </div>
         </div>
