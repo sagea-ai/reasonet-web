@@ -44,7 +44,6 @@ export async function POST(request: NextRequest) {
       workspaceId
     } = validationResult.data
 
-    // Get user from database
     const user = await db.user.findUnique({
       where: { clerkId: userId }
     })
@@ -53,7 +52,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Verify user has access to the workspace
     const workspace = await db.workspace.findFirst({
       where: {
         id: workspaceId,
@@ -69,7 +67,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Workspace not found or access denied' }, { status: 404 })
     }
 
-    // Check if scenario already exists for this workspace
     const existingScenario = await db.scenario.findFirst({
       where: {
         workspaceId,
@@ -81,7 +78,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Scenario already saved to this workspace' }, { status: 409 })
     }
 
-    // Create the scenario
     const scenario = await db.scenario.create({
       data: {
         title,
@@ -110,6 +106,66 @@ export async function POST(request: NextRequest) {
     console.error('Scenario creation error:', error)
     return NextResponse.json(
       { error: 'Failed to save scenario' },
+      { status: 500 }
+    )
+  }
+}
+
+
+export async function GET(request: NextRequest) {
+  try {
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const organizationId = searchParams.get('organizationId')
+
+    if (!organizationId) {
+      return NextResponse.json({ error: 'Organization ID required' }, { status: 400 })
+    }
+
+    const user = await db.user.findUnique({
+      where: { clerkId: userId }
+    })
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    const scenarios = await db.scenario.findMany({
+      where: {
+        workspace: {
+          organizationId,
+          members: {
+            some: {
+              userId: user.id
+            }
+          }
+        }
+      },
+      include: {
+        workspace: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            icon: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      take: 20
+    })
+
+    return NextResponse.json(scenarios)
+  } catch (error) {
+    console.error('Error fetching scenarios:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch scenarios' },
       { status: 500 }
     )
   }
