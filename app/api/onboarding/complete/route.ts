@@ -219,18 +219,57 @@ export async function POST(request: NextRequest) {
     if (invitedEmails && invitedEmails.length > 0) {
       for (const email of invitedEmails) {
         try {
-          await resend.emails.send({
-            from: 'Reasonet <noreply@Reasonet.com>',
-            to: email,
-            subject: `You're invited to join ${result.organization.name} on Reasonet`,
-            html: `
-              <p>Hi there,</p>
-              <p>You have been invited to join <b>${result.organization.name}</b> on Reasonet.</p>
-              <p><a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://platform.Reasonet.com'}/accept-invite?email=${encodeURIComponent(email)}">Accept your invitation</a></p>
-              <p>If you did not expect this, you can ignore this email.</p>
-              <p>—ciao, The Reasonet Team</p>
-            `
+          // Find the invitation token for this email
+          const invitation = await prisma.invitation.findFirst({
+            where: {
+              email,
+              organizationId: result.organization.id
+            }
           })
+
+          if (invitation) {
+            const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://reasonet.sagea.space'}/accept-invite?token=${invitation.token}&org=${result.organization.id}`
+            
+            await resend.emails.send({
+              from: 'Reasonet <noreply@basabjha.com.np>',
+              to: email,
+              subject: `You're invited to join ${result.organization.name} on Reasonet`,
+              html: `
+                <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                  <div style="text-align: center; margin-bottom: 30px;">
+                    <h1 style="color: #0ea5e9; margin: 0;">Reasonet</h1>
+                  </div>
+                  
+                  <h2 style="color: #1f2937; margin-bottom: 20px;">You're invited to join ${result.organization.name}</h2>
+                  
+                  <p style="color: #4b5563; line-height: 1.6; margin-bottom: 20px;">
+                    Hi there! You've been invited to collaborate with the team at <strong>${result.organization.name}</strong> on Reasonet.
+                  </p>
+                  
+                  <p style="color: #4b5563; line-height: 1.6; margin-bottom: 30px;">
+                    Reasonet helps teams catch bugs and improve code quality through intelligent analysis and AI-powered insights.
+                  </p>
+                  
+                  <div style="text-align: center; margin: 30px 0;">
+                    <a href="${inviteUrl}" 
+                       style="background-color: #0ea5e9; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: 500; display: inline-block;">
+                      Accept Invitation
+                    </a>
+                  </div>
+                  
+                  <p style="color: #6b7280; font-size: 14px; line-height: 1.5; margin-top: 30px;">
+                    This invitation will expire in 7 days. If you didn't expect this invitation, you can safely ignore this email.
+                  </p>
+                  
+                  <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+                  
+                  <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+                    © ${new Date().getFullYear()} Reasonet. All rights reserved.
+                  </p>
+                </div>
+              `
+            })
+          }
         } catch (err) {
           console.error('Failed to send invite email to', email, err)
         }
@@ -240,7 +279,7 @@ export async function POST(request: NextRequest) {
     // Send welcome email to user
     try {
       await resend.emails.send({
-        from: 'Reasonet <noreply@Reasonet.com>',
+        from: 'Reasonet <noreply@basabjha.com.np>',
         to: result.user.email,
         subject: 'Welcome to Reasonet!',
         html: `
