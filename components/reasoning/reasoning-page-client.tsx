@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -22,7 +22,8 @@ import {
   IoShieldCheckmarkOutline,
   IoAlertCircleOutline,
   IoDocumentTextOutline,
-  IoBarChartOutline
+  IoBarChartOutline,
+  IoBulbOutline
 } from 'react-icons/io5'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
@@ -37,15 +38,12 @@ interface Scenario {
   description: string
   marketData?: string
   verifiableFactors?: string
+  reasoningBacktrack?: string
 }
 
 interface BackwardReasoning {
-  finalOutcome: string
-  requiredConditions: string
-  causalChain: string
-  criticalAssumptions: string
-  riskFactors: string
-  dataSupport?: string
+  scenarioTitle: string
+  howICameToThisConclusion: string
 }
 
 interface ReasoningResult {
@@ -323,9 +321,9 @@ export function ReasoningPageClient({
 
                 {/* Scenarios & Reasoning Tab */}
                 <TabsContent value="scenarios" className="space-y-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 xl:grid-cols-3 lg:grid-cols-2 gap-6">
                     {result.scenarios?.map((scenario, index) => {
-                      const reasoning = result.backwardReasoning?.[index]
+                      const reasoning = result.backwardReasoning?.find(r => r.scenarioTitle === scenario.title)
                       const isFlipped = flippedCards.has(index)
 
                       return (
@@ -334,7 +332,7 @@ export function ReasoningPageClient({
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.1 }}
-                          className="relative h-[400px] cursor-pointer"
+                          className="relative cursor-pointer h-[500px]"
                           onClick={() => toggleCard(index)}
                           style={{ perspective: '1000px' }}
                         >
@@ -344,10 +342,10 @@ export function ReasoningPageClient({
                             style={{ transformStyle: 'preserve-3d' }}
                           >
                             {/* Front of card - Scenario */}
-                            <Card className="absolute inset-0 border-0 shadow-sm bg-white dark:bg-gray-800 backface-hidden h-[500px]">
-                              <CardHeader className="pb-3">
+                            <Card className="absolute inset-0 border-0 shadow-sm bg-white dark:bg-gray-800 backface-hidden overflow-hidden">
+                              <CardHeader className="pb-4 flex-shrink-0">
                                 <div className="flex items-start justify-between">
-                                  <Badge className={`${getTypeColor(scenario.type)} border text-xs font-medium`}>
+                                  <Badge className={`${getTypeColor(scenario.type)} border text-xs font-medium w-fit`}>
                                     <span className="flex items-center gap-1">
                                       {getTypeIcon(scenario.type)}
                                       {scenario.type}
@@ -364,41 +362,42 @@ export function ReasoningPageClient({
                                   </div>
                                 </div>
                               </CardHeader>
-                              <CardContent className="space-y-4 flex flex-col h-full">
-                                <div className="flex-1">
-                                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2 leading-tight">
+                              
+                              <CardContent className="flex flex-col h-full overflow-hidden">
+                                <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent pr-2">
+                                  <h3 className="font-semibold text-gray-900 dark:text-white mb-3 leading-tight">
                                     {scenario.title}
                                   </h3>
-                                  <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+                                  <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-4">
                                     {scenario.description}
                                   </p>
+                                  
+                                  {scenario.marketData && (
+                                    <div className="border-t pt-3 mb-3">
+                                      <h4 className="text-xs font-medium text-gray-900 dark:text-white mb-2">
+                                        Market Data
+                                      </h4>
+                                      <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                                        {scenario.marketData}
+                                      </p>
+                                    </div>
+                                  )}
+                                  
+                                  {scenario.verifiableFactors && (
+                                    <div className="border-t pt-3 mb-3">
+                                      <h4 className="text-xs font-medium text-gray-900 dark:text-white mb-2">
+                                        Verifiable Factors
+                                      </h4>
+                                      <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                                        {scenario.verifiableFactors}
+                                      </p>
+                                    </div>
+                                  )}
                                 </div>
-                                
-                                {scenario.marketData && (
-                                  <div className="border-t pt-3">
-                                    <h4 className="text-xs font-medium text-gray-900 dark:text-white mb-1">
-                                      Market Data
-                                    </h4>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                                      {scenario.marketData}
-                                    </p>
-                                  </div>
-                                )}
-                                
-                                {scenario.verifiableFactors && (
-                                  <div className="border-t pt-3">
-                                    <h4 className="text-xs font-medium text-gray-900 dark:text-white mb-1">
-                                      Verifiable Factors
-                                    </h4>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                                      {scenario.verifiableFactors}
-                                    </p>
-                                  </div>
-                                )}
 
-                                <div className="mt-4 flex items-center justify-center pt-3 border-t">
+                                <div className="flex items-center justify-center pt-4 border-t mt-4 flex-shrink-0">
                                   <div className="flex items-center gap-2 text-sm text-gray-500">
-                                    <IoRefreshOutline className="w-4 h-4" />
+                                    <IoBulbOutline className="w-4 h-4" />
                                     Click to see reasoning
                                   </div>
                                 </div>
@@ -406,92 +405,31 @@ export function ReasoningPageClient({
                             </Card>
 
                             {/* Back of card - Reasoning */}
-                            <Card className="absolute inset-0 border-0 shadow-sm bg-blue-50 dark:bg-blue-950/30 backface-hidden rotate-y-180 h-[550px]">
-                              <CardHeader className="pb-3">
+                            <Card className="absolute inset-0 border-0 shadow-sm bg-purple-50 dark:bg-purple-950/30 backface-hidden rotate-y-180 overflow-hidden">
+                              <CardHeader className="pb-4 flex-shrink-0">
                                 <div className="flex items-center gap-2">
-                                  <IoArrowForward className="w-5 h-5 text-blue-600" />
-                                  <h4 className="font-semibold text-blue-900 dark:text-blue-100">
-                                    Backward Reasoning
+                                  <IoBulbOutline className="w-5 h-5 text-purple-600" />
+                                  <h4 className="font-semibold text-purple-900 dark:text-purple-100">
+                                    How I Reached This Conclusion
                                   </h4>
                                 </div>
                               </CardHeader>
-                              <CardContent className="space-y-3 text-sm overflow-y-auto">
-                                {reasoning ? (
-                                  <>
-                                    {reasoning.finalOutcome && (
-                                      <div>
-                                        <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">
-                                          Final Outcome:
-                                        </div>
-                                        <div className="text-blue-700 dark:text-blue-300 text-xs">
-                                          {reasoning.finalOutcome}
-                                        </div>
-                                      </div>
-                                    )}
-                                    
-                                    {reasoning.requiredConditions && (
-                                      <div>
-                                        <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">
-                                          Required Conditions:
-                                        </div>
-                                        <div className="text-blue-700 dark:text-blue-300 text-xs">
-                                          {reasoning.requiredConditions}
-                                        </div>
-                                      </div>
-                                    )}
-                                    
-                                    {reasoning.causalChain && (
-                                      <div>
-                                        <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">
-                                          Causal Chain:
-                                        </div>
-                                        <div className="text-blue-700 dark:text-blue-300 text-xs">
-                                          {reasoning.causalChain}
-                                        </div>
-                                      </div>
-                                    )}
-                                    
-                                    {reasoning.criticalAssumptions && (
-                                      <div>
-                                        <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">
-                                          Critical Assumptions:
-                                        </div>
-                                        <div className="text-blue-700 dark:text-blue-300 text-xs">
-                                          {reasoning.criticalAssumptions}
-                                        </div>
-                                      </div>
-                                    )}
-                                    
-                                    {reasoning.riskFactors && (
-                                      <div>
-                                        <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">
-                                          Risk Factors:
-                                        </div>
-                                        <div className="text-blue-700 dark:text-blue-300 text-xs">
-                                          {reasoning.riskFactors}
-                                        </div>
-                                      </div>
-                                    )}
-                                    
-                                    {reasoning.dataSupport && (
-                                      <div>
-                                        <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">
-                                          Data Support:
-                                        </div>
-                                        <div className="text-blue-700 dark:text-blue-300 text-xs">
-                                          {reasoning.dataSupport}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </>
-                                ) : (
-                                  <div className="text-blue-700 dark:text-blue-300 text-sm">
-                                    No reasoning available for this scenario.
-                                  </div>
-                                )}
+                              
+                              <CardContent className="flex flex-col h-full overflow-hidden">
+                                <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-300 dark:scrollbar-thumb-purple-600 scrollbar-track-transparent pr-2">
+                                  {reasoning ? (
+                                    <div className="text-purple-700 dark:text-purple-300 text-sm leading-relaxed">
+                                      {reasoning.howICameToThisConclusion}
+                                    </div>
+                                  ) : (
+                                    <div className="text-purple-700 dark:text-purple-300 text-sm">
+                                      No detailed reasoning available for this scenario.
+                                    </div>
+                                  )}
+                                </div>
                                 
-                                <div className="mt-4 flex items-center justify-center pt-3 border-t border-blue-200 dark:border-blue-800">
-                                  <div className="flex items-center gap-2 text-sm text-blue-600">
+                                <div className="flex items-center justify-center pt-4 border-t border-purple-200 dark:border-purple-800 mt-4 flex-shrink-0">
+                                  <div className="flex items-center gap-2 text-sm text-purple-600">
                                     <IoRefreshOutline className="w-4 h-4" />
                                     Click to see scenario
                                   </div>
