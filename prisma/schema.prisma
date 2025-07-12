@@ -343,34 +343,37 @@ model ChatMessage {
 }
 
 model UserEmailEvent {
-  id        String   @id @default(cuid())
-  userId    String
-  type      EmailEventType
-  sentAt    DateTime @default(now())
-  meta      Json?
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String         @id @default(cuid())
+  userId String
+  type   EmailEventType
+  sentAt DateTime       @default(now())
+  meta   Json?
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, type])
   @@map("user_email_events")
 }
 
 model Workspace {
-  id             String            @id @default(cuid())
-  name           String
-  description    String?
-  slug           String
-  icon           String?           @default("📝")
-  isPrivate      Boolean           @default(false)
-  organizationId String
-  creatorId      String
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @default(now())
-  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  creator        User              @relation("WorkspaceCreator", fields: [creatorId], references: [id], onDelete: Cascade)
-  members        WorkspaceMember[]
-  analyses       Analysis[]        @relation("WorkspaceAnalyses")
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  slug        String  @unique
+  icon        String  @default("📝")
+  isPrivate   Boolean @default(false)
+  prompt      String? @db.Text
 
-  @@unique([organizationId, slug])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  creatorId      String
+  creator        User         @relation("WorkspaceCreator", fields: [creatorId], references: [id])
+
+  members   WorkspaceMember[]
+  analyses  Analysis[]        @relation("WorkspaceAnalyses")
+  scenarios Scenario[]
+
   @@map("workspaces")
 }
 
@@ -386,6 +389,26 @@ model WorkspaceMember {
 
   @@unique([userId, workspaceId])
   @@map("workspace_members")
+}
+
+model Scenario {
+  id                String  @id @default(cuid())
+  title             String
+  type              String 
+  probability       Int
+  timeframe         String
+  description       String  @db.Text
+  marketData        String? @db.Text
+  verifiableFactors String? @db.Text
+  backwardReasoning String? @db.Text
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@map("scenarios")
 }
 
 enum CompanySize {
