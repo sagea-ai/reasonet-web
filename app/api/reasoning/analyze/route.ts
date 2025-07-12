@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import OpenAI from 'openai'
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
+const openai = new OpenAI({
+  apiKey: process.env.SAGEA_API_KEY!,
+})
 
 export async function POST(request: NextRequest) {
   try {
@@ -74,14 +76,24 @@ IMPORTANT GUIDELINES:
 
 Generate exactly 3 scenarios with corresponding backward reasoning explanations. Be specific, factual, and ensure all analysis can be verified through market research. Return only valid JSON.`
 
-    // Get the gemini-1.5-flash model (free tier)
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt
+        },
+        {
+          role: "user",
+          content: query
+        }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.7,
+      max_tokens: 4000,
+    })
 
-    const prompt = `${systemPrompt}\n\nUser Query: ${query}`
-
-    const result = await model.generateContent(prompt)
-    const response = await result.response
-    const content = response.text()
+    const content = completion.choices[0].message.content
 
     if (!content) {
       throw new Error('No content received from AI')
@@ -90,23 +102,9 @@ Generate exactly 3 scenarios with corresponding backward reasoning explanations.
     console.log('Raw AI response:', content)
 
     try {
-      // Clean the response to extract JSON
-      let cleanedContent = content.trim()
-      
-      // Remove markdown code blocks if present
-      cleanedContent = cleanedContent.replace(/```json\n?/g, '')
-      cleanedContent = cleanedContent.replace(/```\n?/g, '')
-      
-      // Extract JSON from the response
-      const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        const analysisData = JSON.parse(jsonMatch[0])
-        console.log('Parsed analysis data:', JSON.stringify(analysisData, null, 2))
-        return NextResponse.json(analysisData)
-      } else {
-        console.log('No JSON found in response')
-        throw new Error('No JSON found in response')
-      }
+      const analysisData = JSON.parse(content)
+      console.log('Parsed analysis data:', JSON.stringify(analysisData, null, 2))
+      return NextResponse.json(analysisData)
     } catch (parseError) {
       console.error('Failed to parse AI response:', parseError)
       console.error('Raw content:', content)
