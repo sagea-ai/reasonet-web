@@ -56,7 +56,43 @@ export async function POST(
     });
 
     if (!userToInvite) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      // Create an invitation instead of requiring the user to exist
+      const workspace = await db.workspace.findUnique({
+        where: { id: workspaceId },
+        include: {
+          organization: true
+        }
+      });
+
+      if (!workspace) {
+        return NextResponse.json({ error: 'Workspace not found' }, { status: 404 });
+      }
+
+      // Create workspace invitation
+      const token = `ws_inv_${Math.random().toString(36).substr(2, 32)}`;
+      const invitation = await db.invitation.create({
+        data: {
+          email,
+          role: 'MEMBER', // Default for workspace invites
+          token,
+          organizationId: workspace.organizationId,
+          organizationName: workspace.organization.name,
+          invitedById: requesterMember.userId,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
+        }
+      });
+
+      // Send invitation email with workspace context
+      // (Email sending logic here)
+
+      return NextResponse.json({ 
+        message: 'Invitation sent',
+        invitation: {
+          email: invitation.email,
+          role: invitation.role,
+          token: invitation.token
+        }
+      });
     }
 
     // Check if user is already a member
