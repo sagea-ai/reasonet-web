@@ -231,7 +231,7 @@ export async function POST(request: NextRequest) {
             const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://reasonet.sagea.space'}/accept-invite?token=${invitation.token}&org=${result.organization.id}`
             
             await resend.emails.send({
-              from: 'Reasonet <noreply@reasonet.com>',
+              from: 'Reasonet <noreply@basabjha.com.np>',
               to: email,
               subject: `You're invited to join ${result.organization.name} on Reasonet`,
               html: `
@@ -279,7 +279,7 @@ export async function POST(request: NextRequest) {
     // Send welcome email to user
     try {
       await resend.emails.send({
-        from: 'Reasonet <noreply@Reasonet.com>',
+        from: 'Reasonet <noreply@basabjha.com.np>',
         to: result.user.email,
         subject: 'Welcome to Reasonet!',
         html: `
