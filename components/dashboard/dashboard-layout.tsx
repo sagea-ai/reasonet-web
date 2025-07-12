@@ -89,6 +89,53 @@ export function DashboardLayout({
 }: DashboardLayoutProps) {
   const greeting = getTimeBasedGreeting(userName);
 
+  // Mock data for demonstration
+  const mockStats = {
+    ideasAnalyzed: 3,
+    averageScore: 67
+  };
+
+  const mockRecentAnalyses = [
+    {
+      id: 1,
+      title: "AI-powered meal planning app",
+      score: 72,
+      date: "2 days ago",
+      status: "completed",
+      insights: "Strong market demand, moderate competition"
+    },
+    {
+      id: 2,
+      title: "Sustainable packaging for e-commerce",
+      score: 85,
+      date: "1 week ago", 
+      status: "completed",
+      insights: "High defensibility, growing market"
+    },
+    {
+      id: 3,
+      title: "Remote team collaboration tool",
+      score: 45,
+      date: "2 weeks ago",
+      status: "completed", 
+      insights: "Crowded market, needs differentiation"
+    }
+  ];
+
+  const mockChartData = {
+    labels: ['2 weeks ago', '1 week ago', '2 days ago'],
+    datasets: [
+      {
+        label: 'Analysis Score',
+        data: [45, 85, 72],
+        borderColor: 'rgb(14, 165, 233)',
+        backgroundColor: 'rgba(14, 165, 233, 0.1)',
+        fill: true,
+        tension: 0.4,
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white dark:from-sky-950 dark:to-gray-950">
       <TrialProvider>
@@ -97,7 +144,6 @@ export function DashboardLayout({
           <TrialBannerWrapper />
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Greeting Section */}
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
               {greeting}
@@ -109,13 +155,13 @@ export function DashboardLayout({
 
           {/* Main Grid Layout (Start Analysis, Stats, Recent Analyses) */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            {/* Quick Actions Card */}
             <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-2xl shadow-md p-6 border border-gray-200 dark:border-gray-800">
               <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-sky-400 dark:text-sky-300" /> Start Analysis
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <button className="flex items-center justify-between p-4 bg-sky-50 dark:bg-sky-900/30 rounded-xl border border-sky-100 dark:border-sky-800 hover:bg-sky-100 dark:hover:bg-sky-900/50 transition-colors group">
+                  <Link href="/simulate">
                   <div>
                     <h3 className="font-medium text-sky-900 dark:text-sky-100 flex items-center gap-2">
                       <EclipseIcon className="w-4 h-4 text-sky-400 group-hover:text-sky-600 transition" /> New Startup Idea
@@ -123,15 +169,19 @@ export function DashboardLayout({
                     <p className="text-sm text-sky-700 dark:text-sky-300">Get investor-like feedback</p>
                   </div>
                   <ArrowRight className="w-5 h-5 text-sky-500 group-hover:text-sky-600 transition" />
+                  </Link>
                 </button>
+
                 <button className="flex items-center justify-between p-4 bg-sky-50 dark:bg-sky-900/30 rounded-xl border border-sky-100 dark:border-sky-800 hover:bg-sky-100 dark:hover:bg-sky-900/50 transition-colors group">
+                  <Link href="/Deep Research">
                   <div>
                     <h3 className="font-medium text-sky-900 dark:text-sky-100 flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-sky-400 group-hover:text-sky-600 transition" /> GTM Strategy
+                      <TrendingUp className="w-4 h-4 text-sky-400 group-hover:text-sky-600 transition" /> Deep Research
                     </h3>
                     <p className="text-sm text-sky-700 dark:text-sky-300">Validate your approach</p>
                   </div>
                   <ArrowRight className="w-5 h-5 text-sky-500 group-hover:text-sky-600 transition" />
+                  </Link>
                 </button>
               </div>
             </div>
@@ -144,11 +194,11 @@ export function DashboardLayout({
               <div className="space-y-4">
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Ideas Analyzed</p>
-                  <p className="text-2xl font-semibold text-gray-900 dark:text-white">0</p>
+                  <p className="text-2xl font-semibold text-gray-900 dark:text-white">{mockStats.ideasAnalyzed}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Average Score</p>
-                  <p className="text-2xl font-semibold text-gray-900 dark:text-white">-</p>
+                  <p className="text-2xl font-semibold text-gray-900 dark:text-white">{mockStats.averageScore}</p>
                 </div>
               </div>
             </div>
@@ -158,8 +208,28 @@ export function DashboardLayout({
               <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-sky-400 dark:text-sky-300" /> Recent Analyses
               </h2>
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                <p>No analyses yet. Start by creating your first analysis above.</p>
+              <div className="space-y-3">
+                {mockRecentAnalyses.map((analysis) => (
+                  <div key={analysis.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer">
+                    <div className="flex-1">
+                      <h3 className="font-medium text-gray-900 dark:text-white">{analysis.title}</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{analysis.insights}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{analysis.date}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <div className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                          analysis.score >= 70 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                          analysis.score >= 50 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                          'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                        }`}>
+                          {analysis.score}/100
+                        </div>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-gray-400" />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -171,16 +241,31 @@ export function DashboardLayout({
               <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
                 <BarChart3 className="w-5 h-5 text-sky-400 dark:text-sky-300" /> Startup Analysis Score Trend
               </h2>
-              {/* Chart.js Line chart placeholder, expects real data via props */}
               <div className="flex-1 flex items-center justify-center min-h-[220px]">
                 <Line
-                  data={{ labels: [], datasets: [] }}
+                  data={mockChartData}
                   options={{
                     responsive: true,
-                    plugins: { legend: { display: false } },
+                    maintainAspectRatio: false,
+                    plugins: { 
+                      legend: { display: false },
+                      tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                      }
+                    },
                     scales: {
-                      x: { title: { display: true, text: 'Date' } },
-                      y: { title: { display: true, text: 'Score' }, min: 0, max: 100 }
+                      x: { 
+                        title: { display: true, text: 'Timeline' },
+                        grid: { display: false }
+                      },
+                      y: { 
+                        title: { display: true, text: 'Score' }, 
+                        min: 0, 
+                        max: 100,
+                        grid: { color: 'rgba(0, 0, 0, 0.1)' }
+                      }
                     }
                   }}
                 />
@@ -190,14 +275,31 @@ export function DashboardLayout({
             {/* GTM & Defensibility Radar Chart */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-md p-6 border border-gray-200 dark:border-gray-800 flex flex-col">
               <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-sky-400 dark:text-sky-300" /> GTM & Defensibility Overview
+                <TrendingUp className="w-5 h-5 text-sky-400 dark:text-sky-300" /> Analysis Breakdown
               </h2>
-              {/* Chart.js Radar chart placeholder, expects real data via props */}
               <div className="flex-1 flex items-center justify-center min-h-[220px]">
-                {/* Radar chart placeholder, to be replaced with real data */}
-                <span className="text-gray-400 dark:text-gray-600 text-sm">Radar chart will visualize GTM, Defensibility, Vision, etc.</span>
+                <div className="text-center space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-sky-50 dark:bg-sky-900/30 p-3 rounded-lg">
+                      <p className="text-xs text-sky-600 dark:text-sky-400 font-medium">Market Size</p>
+                      <p className="text-lg font-semibold text-sky-800 dark:text-sky-200">8.2/10</p>
+                    </div>
+                    <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded-lg">
+                      <p className="text-xs text-green-600 dark:text-green-400 font-medium">Defensibility</p>
+                      <p className="text-lg font-semibold text-green-800 dark:text-green-200">7.1/10</p>
+                    </div>
+                    <div className="bg-yellow-50 dark:bg-yellow-900/30 p-3 rounded-lg">
+                      <p className="text-xs text-yellow-600 dark:text-yellow-400 font-medium">GTM Strategy</p>
+                      <p className="text-lg font-semibold text-yellow-800 dark:text-yellow-200">6.5/10</p>
+                    </div>
+                    <div className="bg-purple-50 dark:bg-purple-900/30 p-3 rounded-lg">
+                      <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">Team Fit</p>
+                      <p className="text-lg font-semibold text-purple-800 dark:text-purple-200">7.8/10</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">See your strengths and weaknesses across key axes.</p>
+              <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">See your strengths and weaknesses across key dimensions.</p>
             </div>
           </div>
         </div>
