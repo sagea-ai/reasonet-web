@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import OpenAI from 'openai'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
-const openai = new OpenAI({
-  apiKey: process.env.SAGEA_API_KEY,
-})
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
 export async function POST(request: NextRequest) {
   try {
@@ -76,17 +74,15 @@ IMPORTANT GUIDELINES:
 
 Generate exactly 3 scenarios with corresponding backward reasoning explanations. Be specific, factual, and ensure all analysis can be verified through market research. Return only valid JSON.`
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: query }
-      ],
-      temperature: 0.3,
-      max_tokens: 4000,
-    })
+    // Get the gemini-1.5-flash model (free tier)
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
-    const content = completion.choices[0]?.message?.content
+    const prompt = `${systemPrompt}\n\nUser Query: ${query}`
+
+    const result = await model.generateContent(prompt)
+    const response = await result.response
+    const content = response.text()
+
     if (!content) {
       throw new Error('No content received from AI')
     }
@@ -94,7 +90,15 @@ Generate exactly 3 scenarios with corresponding backward reasoning explanations.
     console.log('Raw AI response:', content)
 
     try {
-      const jsonMatch = content.match(/\{[\s\S]*\}/)
+      // Clean the response to extract JSON
+      let cleanedContent = content.trim()
+      
+      // Remove markdown code blocks if present
+      cleanedContent = cleanedContent.replace(/```json\n?/g, '')
+      cleanedContent = cleanedContent.replace(/```\n?/g, '')
+      
+      // Extract JSON from the response
+      const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
         const analysisData = JSON.parse(jsonMatch[0])
         console.log('Parsed analysis data:', JSON.stringify(analysisData, null, 2))
@@ -105,6 +109,7 @@ Generate exactly 3 scenarios with corresponding backward reasoning explanations.
       }
     } catch (parseError) {
       console.error('Failed to parse AI response:', parseError)
+      console.error('Raw content:', content)
       return NextResponse.json(
         { error: 'Failed to parse AI response' },
         { status: 500 }

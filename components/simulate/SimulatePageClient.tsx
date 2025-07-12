@@ -10,7 +10,15 @@ import { FloatingPromptBar } from '@/components/simulate/FloatingPromptBar'
 import { TrialBannerWrapper } from "../trial/trial-banner-wrapper"
 
 
-export function SimulatePageClient() {
+interface SimulatePageClientProps {
+  onRunAnalysis: () => void;
+  isAnalyzing: boolean;
+}
+
+export function SimulatePageClient({ 
+  onRunAnalysis, 
+  isAnalyzing 
+}: SimulatePageClientProps) {
   const router = useRouter()
   const [currentPrompt, setCurrentPrompt] = useState('')
   const [isAnimating, setIsAnimating] = useState(false)

@@ -23,12 +23,16 @@ import {
   IoAlertCircleOutline,
   IoDocumentTextOutline,
   IoBarChartOutline,
-  IoBulbOutline
+  IoBulbOutline,
+  IoSearchOutline,
+  IoSaveOutline
 } from 'react-icons/io5'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
 import { TrialProvider } from '../trial/trial-provider'
 import { TrialBannerWrapper } from '../trial/trial-banner-wrapper'
+import { WorkspaceSelectionModal } from './workspace-selection-modal'
 
 interface Scenario {
   title: string
@@ -78,6 +82,12 @@ export function ReasoningPageClient({
   const [result, setResult] = useState<ReasoningResult | null>(null)
   const [activeTab, setActiveTab] = useState('overview')
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set())
+  const [isDeepSearching, setIsDeepSearching] = useState(false)
+  const [selectedScenario, setSelectedScenario] = useState<any>(null)
+  const [workspaceModalOpen, setWorkspaceModalOpen] = useState(false)
+  const [savingScenario, setSavingScenario] = useState(false)
+  const [savedScenarios, setSavedScenarios] = useState<Set<string>>(new Set()) // Track saved scenarios
+  const router = useRouter()
 
   // Handle workflow data from sessionStorage
   useEffect(() => {
@@ -147,6 +157,31 @@ export function ReasoningPageClient({
     }
   }
 
+  const handleDeepSearch = async () => {
+    if (!query.trim()) {
+      toast.error('No prompt available for deep search')
+      return
+    }
+
+    setIsDeepSearching(true)
+    
+    try {
+      // Store the prompt in sessionStorage for DeepSearch
+      sessionStorage.setItem('deepSearchData', JSON.stringify({ 
+        prompt: query,
+        source: 'reasoning'
+      }))
+      
+      // Navigate to DeepSearch page
+      router.push('/deepresearch?autoAnalyze=true')
+      
+    } catch (error) {
+      console.error('Deep search navigation failed:', error)
+      toast.error('Failed to start deep search')
+      setIsDeepSearching(false)
+    }
+  }
+
   const toggleCard = (index: number) => {
     const newFlippedCards = new Set(flippedCards)
     if (newFlippedCards.has(index)) {
@@ -155,6 +190,65 @@ export function ReasoningPageClient({
       newFlippedCards.add(index)
     }
     setFlippedCards(newFlippedCards)
+  }
+
+  const handleSaveScenario = async (scenario: any, workspaceId: string) => {
+    setSavingScenario(true)
+    try {
+      const reasoning = result.backwardReasoning?.find(r => r.scenarioTitle === scenario.title)
+      
+      const response = await fetch('/api/scenarios', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: scenario.title,
+          type: scenario.type,
+          probability: scenario.probability,
+          timeframe: scenario.timeframe,
+          description: scenario.description,
+          marketData: scenario.marketData,
+          verifiableFactors: scenario.verifiableFactors,
+          backwardReasoning: reasoning?.howICameToThisConclusion,
+          workspaceId
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to save scenario')
+      }
+
+      setSavedScenarios(prev => new Set(prev).add(scenario.title))
+      toast.success('Scenario saved successfully!')
+    } catch (error) {
+      console.error('Error saving scenario:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to save scenario')
+    } finally {
+      setSavingScenario(false)
+    }
+  }
+
+  useEffect(() => {
+    if (result && currentOrganization.id) {
+      checkSavedScenarios()
+    }
+  }, [result, currentOrganization.id])
+
+  const checkSavedScenarios = async () => {
+    if (!currentOrganization.id || !result?.scenarios) return
+    
+    try {
+      const response = await fetch(`/api/workspaces/${currentOrganization.id}/scenarios`)
+      if (response.ok) {
+        const savedScenarios = await response.json()
+        const savedTitles = new Set(savedScenarios.map((s: any) => s.title as string))
+        setSavedScenarios(savedTitles as Set<string>)
+      }
+    } catch (error) {
+      console.error('Error checking saved scenarios:', error)
+    }
   }
 
   const getTypeIcon = (type: string) => {
@@ -192,23 +286,6 @@ export function ReasoningPageClient({
       </TrialProvider>
       
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="flex items-center justify-center w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
-              <IoFlashOutline className="w-6 h-6 text-blue-600" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Strategic Analysis
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
-                AI-powered workflow scenario analysis and recommendations
-              </p>
-            </div>
-          </div>
-        </div>
-
         {/* Loading State */}
         {isAnalyzing && (
           <motion.div
@@ -325,6 +402,7 @@ export function ReasoningPageClient({
                     {result.scenarios?.map((scenario, index) => {
                       const reasoning = result.backwardReasoning?.find(r => r.scenarioTitle === scenario.title)
                       const isFlipped = flippedCards.has(index)
+                      const isSaved = savedScenarios.has(scenario.title)
 
                       return (
                         <motion.div
@@ -342,22 +420,59 @@ export function ReasoningPageClient({
                             style={{ transformStyle: 'preserve-3d' }}
                           >
                             {/* Front of card - Scenario */}
-                            <Card className="absolute inset-0 border-0 shadow-sm bg-white dark:bg-gray-800 backface-hidden overflow-hidden">
+                            <Card className={`absolute inset-0 border-0 shadow-sm bg-white dark:bg-gray-800 backface-hidden overflow-hidden ${
+                              isSaved ? 'ring-2 ring-green-200 bg-green-50 dark:bg-green-900/20' : ''
+                            }`}>
                               <CardHeader className="pb-4 flex-shrink-0">
                                 <div className="flex items-start justify-between">
-                                  <Badge className={`${getTypeColor(scenario.type)} border text-xs font-medium w-fit`}>
-                                    <span className="flex items-center gap-1">
-                                      {getTypeIcon(scenario.type)}
-                                      {scenario.type}
-                                    </span>
-                                  </Badge>
-                                  <div className="text-right">
-                                    <div className={`text-xl font-bold ${getProbabilityColor(scenario.probability)}`}>
-                                      {scenario.probability}%
-                                    </div>
-                                    <div className="text-xs text-gray-500 flex items-center gap-1">
-                                      <IoTimeOutline className="w-3 h-3" />
-                                      {scenario.timeframe}
+                                  <div className="flex items-center gap-2">
+                                    <Badge className={`${getTypeColor(scenario.type)} border text-xs font-medium w-fit`}>
+                                      <span className="flex items-center gap-1">
+                                        {getTypeIcon(scenario.type)}
+                                        {scenario.type}
+                                      </span>
+                                    </Badge>
+                                    {isSaved && (
+                                      <Badge className="bg-green-100 text-green-800 border-green-200 text-xs font-medium">
+                                        <IoCheckmarkCircleOutline className="w-3 h-3 mr-1" />
+                                        Saved
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant={isSaved ? "default" : "outline"}
+                                      onClick={(e) => {
+                                        e.stopPropagation() // Prevent card flip
+                                        if (!isSaved) {
+                                          setSelectedScenario(scenario)
+                                          setWorkspaceModalOpen(true)
+                                        }
+                                      }}
+                                      disabled={savingScenario || isSaved}
+                                      className={isSaved 
+                                        ? "bg-green-600 hover:bg-green-700 text-white border-green-600" 
+                                        : "bg-white/80 hover:bg-white border-gray-200 text-gray-700 hover:text-gray-900"
+                                      }
+                                    >
+                                      {savingScenario && selectedScenario?.title === scenario.title ? (
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></div>
+                                      ) : isSaved ? (
+                                        <IoCheckmarkCircleOutline className="w-4 h-4 mr-1" />
+                                      ) : (
+                                        <IoSaveOutline className="w-4 h-4 mr-1" />
+                                      )}
+                                      {isSaved ? 'Saved' : 'Save'}
+                                    </Button>
+                                    <div className="text-right">
+                                      <div className={`text-xl font-bold ${getProbabilityColor(scenario.probability)}`}>
+                                        {scenario.probability}%
+                                      </div>
+                                      <div className="text-xs text-gray-500 flex items-center gap-1">
+                                        <IoTimeOutline className="w-3 h-3" />
+                                        {scenario.timeframe}
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
@@ -405,13 +520,23 @@ export function ReasoningPageClient({
                             </Card>
 
                             {/* Back of card - Reasoning */}
-                            <Card className="absolute inset-0 border-0 shadow-sm bg-purple-50 dark:bg-purple-950/30 backface-hidden rotate-y-180 overflow-hidden">
+                            <Card className={`absolute inset-0 border-0 shadow-sm bg-purple-50 dark:bg-purple-950/30 backface-hidden rotate-y-180 overflow-hidden ${
+                              isSaved ? 'ring-2 ring-green-200' : ''
+                            }`}>
                               <CardHeader className="pb-4 flex-shrink-0">
-                                <div className="flex items-center gap-2">
-                                  <IoBulbOutline className="w-5 h-5 text-purple-600" />
-                                  <h4 className="font-semibold text-purple-900 dark:text-purple-100">
-                                    How I Reached This Conclusion
-                                  </h4>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <IoBulbOutline className="w-5 h-5 text-purple-600" />
+                                    <h4 className="font-semibold text-purple-900 dark:text-purple-100">
+                                      How I Reached This Conclusion
+                                    </h4>
+                                  </div>
+                                  {isSaved && (
+                                    <Badge className="bg-green-100 text-green-800 border-green-200 text-xs font-medium">
+                                      <IoCheckmarkCircleOutline className="w-3 h-3 mr-1" />
+                                      Saved
+                                    </Badge>
+                                  )}
                                 </div>
                               </CardHeader>
                               
@@ -483,6 +608,21 @@ export function ReasoningPageClient({
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Workspace Selection Modal */}
+        <WorkspaceSelectionModal
+          isOpen={workspaceModalOpen}
+          onClose={() => {
+            setWorkspaceModalOpen(false)
+            setSelectedScenario(null)
+          }}
+          onWorkspaceSelect={(workspaceId) => {
+            if (selectedScenario) {
+              handleSaveScenario(selectedScenario, workspaceId)
+            }
+          }}
+          currentOrganization={currentOrganization}
+        />
       </div>
 
       <style jsx global>{`

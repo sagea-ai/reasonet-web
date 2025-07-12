@@ -8,7 +8,9 @@ const createWorkspaceSchema = z.object({
   description: z.string().max(500).optional(),
   icon: z.string().optional(),
   isPrivate: z.boolean().default(false),
-  organizationId: z.string()
+  organizationId: z.string(),
+  // Add prompt field for workflow simulation
+  prompt: z.string().optional()
 });
 
 export async function GET(request: NextRequest) {
@@ -92,7 +94,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, description, icon, isPrivate, organizationId } = validationResult.data;
+    const { name, description, icon, isPrivate, organizationId, prompt } = validationResult.data;
 
     // Verify user is a member of the organization
     const user = await db.user.findUnique({
@@ -128,6 +130,7 @@ export async function POST(request: NextRequest) {
         isPrivate,
         organizationId,
         creatorId: user.id,
+        prompt, // Store the prompt as header
         members: {
           create: {
             userId: user.id,
