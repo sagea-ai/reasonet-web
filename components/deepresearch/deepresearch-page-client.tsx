@@ -356,7 +356,7 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
         <TrialBannerWrapper />
       </TrialProvider>
       
-      <div className="max-w-6xl mx-auto px-8 py-16 pb-32">
+      <div className="max-w-6xl mx-auto px-8 py-16 mt-20 pb-32">
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-4xl font-bold text-gray-600 dark:text-gray-400 mb-2 tracking-tight">
@@ -527,7 +527,7 @@ export function DeepResearchPageClient({ organizations, currentOrganization }: D
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ duration: 0.3, delay: index * 0.1 }}
-                          className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed font-light pl-4 border-l-2 border-blue-200 dark:border-blue-800"
+                          className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed font-light pl-4 border-l-2 border-sky-200 dark:border-sky-800"
                         >
                           {step.step}
                         </motion.div>
