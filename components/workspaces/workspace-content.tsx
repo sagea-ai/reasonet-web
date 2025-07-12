@@ -605,7 +605,10 @@ export function WorkspaceContent({ workspace }: WorkspaceContentProps) {
               <CardContent>
                 <WorkspaceActivityFeed 
                   workspaceId={workspace.id} 
-                  members={members} 
+                  members={members.map(member => ({
+                    id: member.id,
+                    user: member.user
+                  }))}
                 />
               </CardContent>
             </Card>

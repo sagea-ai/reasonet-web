@@ -65,12 +65,29 @@ export function RichTextEditor({
         setMentionSearch(mentionMatch[1])
         setShowMentions(true)
         
-        // Calculate position for mention dropdown
-        const rect = range.getBoundingClientRect()
-        setMentionPosition({
-          top: rect.bottom + window.scrollY,
-          left: rect.left + window.scrollX
-        })
+        // Create a temporary span to get the exact cursor position
+        const tempSpan = document.createElement('span')
+        tempSpan.style.position = 'absolute'
+        tempSpan.style.visibility = 'hidden'
+        tempSpan.style.whiteSpace = 'pre'
+        
+        // Insert temp span at cursor position
+        const clonedRange = range.cloneRange()
+        clonedRange.insertNode(tempSpan)
+        
+        // Get position relative to the editor
+        const editorRect = editorRef.current?.getBoundingClientRect()
+        const tempRect = tempSpan.getBoundingClientRect()
+        
+        if (editorRect && tempRect) {
+          setMentionPosition({
+            top: tempRect.bottom - editorRect.top + 4,
+            left: tempRect.left - editorRect.left
+          })
+        }
+        
+        // Clean up temp span
+        tempSpan.remove()
       } else {
         setShowMentions(false)
       }
@@ -287,8 +304,8 @@ export function RichTextEditor({
         <div
           className="absolute z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto"
           style={{
-            top: mentionPosition.top,
-            left: mentionPosition.left,
+            top: `${mentionPosition.top}px`,
+            left: `${mentionPosition.left}px`,
             minWidth: '200px'
           }}
         >

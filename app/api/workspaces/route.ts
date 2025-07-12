@@ -9,7 +9,7 @@ const createWorkspaceSchema = z.object({
   icon: z.string().optional(),
   isPrivate: z.boolean().default(false),
   organizationId: z.string(),
-  // Add prompt field for workflow simulation
+
   prompt: z.string().optional()
 });
 
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
         isPrivate,
         organizationId,
         creatorId: user.id,
-        prompt, // Store the prompt as header
+        prompt,
         members: {
           create: {
             userId: user.id,
