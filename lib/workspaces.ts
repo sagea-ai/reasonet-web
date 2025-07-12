@@ -128,3 +128,49 @@ export async function getUserWorkspaceRole(workspaceId: string, userId: string) 
 
   return member?.role || null;
 }
+
+export async function getWorkspaceMembers(workspaceId: string) {
+  const { userId } = await auth();
+  
+  if (!userId) {
+    return [];
+  }
+
+  // Check if user has access to this workspace
+  const userMember = await db.workspaceMember.findFirst({
+    where: {
+      workspaceId,
+      user: {
+        clerkId: userId
+      }
+    }
+  });
+
+  if (!userMember) {
+    return [];
+  }
+
+  const members = await db.workspaceMember.findMany({
+    where: {
+      workspaceId
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          imageUrl: true,
+          clerkId: true
+        }
+      }
+    },
+    orderBy: [
+      { role: 'asc' }, // OWNER first, then ADMIN, then MEMBER, then VIEWER
+      { createdAt: 'asc' }
+    ]
+  });
+
+  return members;
+}

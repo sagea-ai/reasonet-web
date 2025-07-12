@@ -355,20 +355,21 @@ model UserEmailEvent {
 }
 
 model Workspace {
-  id             String            @id @default(cuid())
+  id             String                @id @default(cuid())
   name           String
   description    String?
   slug           String
-  icon           String?           @default("📝")
-  isPrivate      Boolean           @default(false)
+  icon           String?               @default("📝")
+  isPrivate      Boolean               @default(false)
   organizationId String
   creatorId      String
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @default(now())
-  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  creator        User              @relation("WorkspaceCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @default(now())
+  organization   Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  creator        User                  @relation("WorkspaceCreator", fields: [creatorId], references: [id], onDelete: Cascade)
   members        WorkspaceMember[]
-  analyses       Analysis[]        @relation("WorkspaceAnalyses")
+  analyses       Analysis[]            @relation("WorkspaceAnalyses")
+  invitations    WorkspaceInvitation[]
 
   @@unique([organizationId, slug])
   @@map("workspaces")
@@ -386,6 +387,24 @@ model WorkspaceMember {
 
   @@unique([userId, workspaceId])
   @@map("workspace_members")
+}
+
+model WorkspaceInvitation {
+  id               String        @id @default(cuid())
+  email            String
+  role             WorkspaceRole @default(MEMBER)
+  token            String        @unique
+  workspaceId      String
+  workspaceName    String
+  organizationId   String
+  organizationName String
+  invitedById      String
+  expiresAt        DateTime
+  acceptedAt       DateTime?
+  createdAt        DateTime      @default(now())
+  workspace        Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("workspace_invitations")
 }
 
 enum CompanySize {
